@@ -140,167 +140,56 @@ export default function Home() {
               whileInView="animate"
               viewport={{ once: true }}
             >
-              {/* Feature 1 */}
-              <motion.div
-                className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
-                variants={fadeInUp}
-              >
-                <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
-                  <svg
-                    className="h-8 w-8 text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-3 text-2xl font-semibold text-white">Neural Understanding</h3>
-                <p className="text-indigo-300/80">
-                  Our AI doesn't just read symptoms—it comprehends the nuances of your sensory experiences
-                  using advanced neural networks.
-                </p>
-              </motion.div>
-
-              {/* Feature 2 */}
-              <motion.div
-                className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
-                variants={fadeInUp}
-              >
-                <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
-                  <svg
-                    className="h-8 w-8 text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-3 text-2xl font-semibold text-white">Instant Analysis</h3>
-                <p className="text-indigo-300/80">
-                  Get comprehensive health insights in seconds. Our real-time processing delivers results
-                  faster than traditional methods.
-                </p>
-              </motion.div>
-
-              {/* Feature 3 */}
-              <motion.div
-                className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
-                variants={fadeInUp}
-              >
-                <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
-                  <svg
-                    className="h-8 w-8 text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-3 text-2xl font-semibold text-white">Privacy First</h3>
-                <p className="text-indigo-300/80">
-                  Your health data is encrypted end-to-end. We prioritize your privacy with industry-leading
-                  security measures.
-                </p>
-              </motion.div>
-
-              {/* Feature 4 */}
-              <motion.div
-                className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
-                variants={fadeInUp}
-              >
-                <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
-                  <svg
-                    className="h-8 w-8 text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-3 text-2xl font-semibold text-white">Precision Insights</h3>
-                <p className="text-indigo-300/80">
-                  Receive detailed analysis backed by medical knowledge and pattern recognition across
-                  millions of data points.
-                </p>
-              </motion.div>
-
-              {/* Feature 5 */}
-              <motion.div
-                className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
-                variants={fadeInUp}
-              >
-                <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
-                  <svg
-                    className="h-8 w-8 text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-3 text-2xl font-semibold text-white">24/7 Availability</h3>
-                <p className="text-indigo-300/80">
-                  Access SensoryX anytime, anywhere. Get the insights you need whenever symptoms arise, day
-                  or night.
-                </p>
-              </motion.div>
-
-              {/* Feature 6 */}
-              <motion.div
-                className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
-                variants={fadeInUp}
-              >
-                <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
-                  <svg
-                    className="h-8 w-8 text-indigo-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-3 text-2xl font-semibold text-white">Global Reach</h3>
-                <p className="text-indigo-300/80">
-                  Available worldwide with support for multiple languages and healthcare systems, making AI
-                  health insights accessible to all.
-                </p>
-              </motion.div>
+              {[
+                {
+                  icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z",
+                  title: "Neural Understanding",
+                  desc: "Our AI doesn't just read symptoms—it comprehends the nuances of your sensory experiences using advanced neural networks."
+                },
+                {
+                  icon: "M13 10V3L4 14h7v7l9-11h-7z",
+                  title: "Instant Analysis",
+                  desc: "Get comprehensive health insights in seconds. Our real-time processing delivers results faster than traditional methods."
+                },
+                {
+                  icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
+                  title: "Privacy First",
+                  desc: "Your health data is encrypted end-to-end. We prioritize your privacy with industry-leading security measures."
+                },
+                {
+                  icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+                  title: "Precision Insights",
+                  desc: "Receive detailed analysis backed by medical knowledge and pattern recognition across millions of data points."
+                },
+                {
+                  icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+                  title: "24/7 Availability",
+                  desc: "Access SensoryX anytime, anywhere. Get the insights you need whenever symptoms arise, day or night."
+                },
+                {
+                  icon: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+                  title: "Global Reach",
+                  desc: "Available worldwide with support for multiple languages and healthcare systems, making AI health insights accessible to all."
+                }
+              ].map((feature, idx) => (
+                <motion.div
+                  key={idx}
+                  className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
+                  variants={fadeInUp}
+                >
+                  <div className="mb-6 inline-flex rounded-xl bg-indigo-500/10 p-4">
+                    <svg className="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={feature.icon} />
+                    </svg>
+                  </div>
+                  <h3 className="mb-3 text-2xl font-semibold text-white">
+                    {feature.title}
+                  </h3>
+                  <p className="text-indigo-300/80">
+                    {feature.desc}
+                  </p>
+                </motion.div>
+              ))}
             </motion.div>
           </div>
         </section>
@@ -318,59 +207,32 @@ export default function Home() {
             </motion.div>
 
             <div className="grid gap-12 lg:grid-cols-3">
-              <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="mb-6 flex justify-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-3xl font-bold text-white shadow-lg shadow-indigo-500/40">
-                    1
+              {[
+                { num: 1, title: "Describe Your Symptoms", desc: "Share your sensory experiences in natural language. Our AI understands context and nuance.", delay: 0.2 },
+                { num: 2, title: "AI Analysis", desc: "Advanced neural networks process your input, cross-referencing with vast medical databases.", delay: 0.4 },
+                { num: 3, title: "Get Insights", desc: "Receive comprehensive analysis with actionable recommendations and next steps.", delay: 0.6 }
+              ].map((step) => (
+                <motion.div
+                  key={step.num}
+                  className="text-center"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: step.delay }}
+                >
+                  <div className="mb-6 flex justify-center">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-3xl font-bold text-white shadow-lg shadow-indigo-500/40">
+                      {step.num}
+                    </div>
                   </div>
-                </div>
-                <h3 className="mb-4 text-2xl font-semibold text-white">Describe Your Symptoms</h3>
-                <p className="text-indigo-300/80">
-                  Share your sensory experiences in natural language. Our AI understands context and nuance.
-                </p>
-              </motion.div>
-
-              <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-              >
-                <div className="mb-6 flex justify-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-3xl font-bold text-white shadow-lg shadow-indigo-500/40">
-                    2
-                  </div>
-                </div>
-                <h3 className="mb-4 text-2xl font-semibold text-white">AI Analysis</h3>
-                <p className="text-indigo-300/80">
-                  Advanced neural networks process your input, cross-referencing with vast medical databases.
-                </p>
-              </motion.div>
-
-              <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.6 }}
-              >
-                <div className="mb-6 flex justify-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-3xl font-bold text-white shadow-lg shadow-indigo-500/40">
-                    3
-                  </div>
-                </div>
-                <h3 className="mb-4 text-2xl font-semibold text-white">Get Insights</h3>
-                <p className="text-indigo-300/80">
-                  Receive comprehensive analysis with actionable recommendations and next steps.
-                </p>
-              </motion.div>
+                  <h3 className="mb-4 text-2xl font-semibold text-white">
+                    {step.title}
+                  </h3>
+                  <p className="text-indigo-300/80">
+                    {step.desc}
+                  </p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
