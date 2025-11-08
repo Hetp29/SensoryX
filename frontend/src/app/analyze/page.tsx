@@ -162,7 +162,23 @@ export default function AnalyzePage() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      router.push(`/result?symptoms=${encodeURIComponent(userData.symptoms)}`);
+      // Pass all user data as URL parameters
+      const params = new URLSearchParams({
+        name: userData.name,
+        age: userData.age,
+        gender: userData.gender,
+        height: userData.height,
+        weight: userData.weight,
+        medicalHistory: userData.medicalHistory,
+        medications: userData.medications,
+        allergyDetails: userData.allergyDetails,
+        surgeryHistory: userData.surgeryHistory,
+        lifestyle: userData.lifestyle,
+        familyHistory: userData.familyHistory,
+        location: userData.location,
+        symptoms: userData.symptoms,
+      });
+      router.push(`/result?${params.toString()}`);
     }, 3000);
   };
 

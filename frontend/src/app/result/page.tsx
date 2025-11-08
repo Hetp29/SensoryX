@@ -69,15 +69,40 @@ const mockData = {
 
 export default function ResultPage() {
   const searchParams = useSearchParams();
-  const [userSymptoms, setUserSymptoms] = useState('');
+  const [userData, setUserData] = useState({
+    name: '',
+    age: '',
+    gender: '',
+    height: '',
+    weight: '',
+    medicalHistory: '',
+    medications: '',
+    allergyDetails: '',
+    surgeryHistory: '',
+    lifestyle: '',
+    familyHistory: '',
+    location: '',
+    symptoms: '',
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get symptoms from URL params
-    const symptoms = searchParams.get('symptoms');
-    if (symptoms) {
-      setUserSymptoms(symptoms);
-    }
+    // Get all user data from URL params
+    setUserData({
+      name: searchParams.get('name') || '',
+      age: searchParams.get('age') || '',
+      gender: searchParams.get('gender') || '',
+      height: searchParams.get('height') || '',
+      weight: searchParams.get('weight') || '',
+      medicalHistory: searchParams.get('medicalHistory') || '',
+      medications: searchParams.get('medications') || '',
+      allergyDetails: searchParams.get('allergyDetails') || '',
+      surgeryHistory: searchParams.get('surgeryHistory') || '',
+      lifestyle: searchParams.get('lifestyle') || '',
+      familyHistory: searchParams.get('familyHistory') || '',
+      location: searchParams.get('location') || '',
+      symptoms: searchParams.get('symptoms') || '',
+    });
 
     // Simulate API loading
     setTimeout(() => {
@@ -165,21 +190,153 @@ export default function ResultPage() {
             </p>
           </motion.div>
 
-          {/* Your Symptoms Summary */}
-          {userSymptoms && (
+          {/* Patient Information Card */}
+          <motion.div
+            className="mb-8 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900/70 to-indigo-950/50 backdrop-blur-sm overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            {/* Header */}
+            <div className="border-b border-indigo-500/20 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 p-6">
+              <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Patient Information
+              </h3>
+            </div>
+
+            {/* Content - Basic Demographics Only */}
+            <div className="p-6">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {userData.name && (
+                  <div className="rounded-lg bg-slate-900/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Name</p>
+                    <p className="text-lg font-semibold text-white">{userData.name}</p>
+                  </div>
+                )}
+                {userData.age && (
+                  <div className="rounded-lg bg-slate-900/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Age</p>
+                    <p className="text-lg font-semibold text-white">{userData.age}</p>
+                  </div>
+                )}
+                {userData.gender && (
+                  <div className="rounded-lg bg-slate-900/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Gender</p>
+                    <p className="text-lg font-semibold text-white">{userData.gender}</p>
+                  </div>
+                )}
+                {userData.height && (
+                  <div className="rounded-lg bg-slate-900/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Height</p>
+                    <p className="text-lg font-semibold text-white">{userData.height}</p>
+                  </div>
+                )}
+                {userData.weight && (
+                  <div className="rounded-lg bg-slate-900/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Weight</p>
+                    <p className="text-lg font-semibold text-white">{userData.weight}</p>
+                  </div>
+                )}
+                {userData.location && (
+                  <div className="rounded-lg bg-slate-900/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Location</p>
+                    <p className="text-lg font-semibold text-white">{userData.location}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Medical History Card */}
+          {(userData.medicalHistory && userData.medicalHistory !== 'None') ||
+           (userData.medications && userData.medications !== 'None') ||
+           (userData.allergyDetails && userData.allergyDetails !== 'None') ||
+           (userData.surgeryHistory && userData.surgeryHistory !== 'None') ||
+           (userData.lifestyle && userData.lifestyle !== 'None') ||
+           (userData.familyHistory && userData.familyHistory !== 'None known' && userData.familyHistory !== 'None') ? (
             <motion.div
-              className="mb-8 rounded-2xl border border-indigo-500/30 bg-slate-900/50 p-6 backdrop-blur-sm"
+              className="mb-8 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900/70 to-indigo-950/50 backdrop-blur-sm overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.2 }}
             >
-              <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-indigo-200">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Your Symptoms
-              </h3>
-              <p className="text-indigo-100">{userSymptoms}</p>
+              {/* Header */}
+              <div className="border-b border-indigo-500/20 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 p-6">
+                <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                  <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Medical History
+                </h3>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                {userData.medicalHistory && userData.medicalHistory !== 'None' && (
+                  <div className="rounded-lg border border-indigo-500/20 bg-slate-900/30 p-4">
+                    <p className="mb-2 text-sm font-medium uppercase tracking-wide text-indigo-400">Pre-existing Conditions</p>
+                    <p className="text-indigo-100">{userData.medicalHistory}</p>
+                  </div>
+                )}
+                {userData.medications && userData.medications !== 'None' && (
+                  <div className="rounded-lg border border-indigo-500/20 bg-slate-900/30 p-4">
+                    <p className="mb-2 text-sm font-medium uppercase tracking-wide text-indigo-400">Current Medications</p>
+                    <p className="text-indigo-100">{userData.medications}</p>
+                  </div>
+                )}
+                {userData.allergyDetails && userData.allergyDetails !== 'None' && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-4">
+                    <p className="mb-2 text-sm font-medium uppercase tracking-wide text-amber-400">Allergies</p>
+                    <p className="text-amber-100">{userData.allergyDetails}</p>
+                  </div>
+                )}
+                {userData.surgeryHistory && userData.surgeryHistory !== 'None' && (
+                  <div className="rounded-lg border border-indigo-500/20 bg-slate-900/30 p-4">
+                    <p className="mb-2 text-sm font-medium uppercase tracking-wide text-indigo-400">Surgery History</p>
+                    <p className="text-indigo-100">{userData.surgeryHistory}</p>
+                  </div>
+                )}
+                {userData.lifestyle && userData.lifestyle !== 'None' && (
+                  <div className="rounded-lg border border-indigo-500/20 bg-slate-900/30 p-4">
+                    <p className="mb-2 text-sm font-medium uppercase tracking-wide text-indigo-400">Lifestyle</p>
+                    <p className="text-indigo-100">{userData.lifestyle}</p>
+                  </div>
+                )}
+                {userData.familyHistory && userData.familyHistory !== 'None known' && userData.familyHistory !== 'None' && (
+                  <div className="rounded-lg border border-indigo-500/20 bg-slate-900/30 p-4">
+                    <p className="mb-2 text-sm font-medium uppercase tracking-wide text-indigo-400">Family History</p>
+                    <p className="text-indigo-100">{userData.familyHistory}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ) : null}
+
+          {/* Symptoms Card */}
+          {userData.symptoms && (
+            <motion.div
+              className="mb-8 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-slate-900/70 to-purple-950/30 backdrop-blur-sm overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              {/* Header */}
+              <div className="border-b border-purple-500/20 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 p-6">
+                <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                  <svg className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Reported Symptoms
+                </h3>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <p className="text-purple-100 leading-relaxed">{userData.symptoms}</p>
+              </div>
             </motion.div>
           )}
 
