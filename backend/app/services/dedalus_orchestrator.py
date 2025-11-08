@@ -128,7 +128,7 @@ Based on this data and your {agent_type} expertise, provide your assessment.
 
         try:
             response = self.client.chat.completions.create(
-                model="gemini/gemini-2.0-flash-exp",
+                model="google/gemini-2.0-flash-exp",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": enhanced_context}
