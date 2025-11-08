@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers import symptoms
 
 app = FastAPI(title="SensoryX API")
 
+# CORS setup for local frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -10,11 +12,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routers
+app.include_router(symptoms.router, prefix="/api", tags=["Symptoms"])
+
 @app.get("/")
 async def root():
-    return {"message": "SensoryX API is running"}
-
-@app.post("/match-symptoms")
-async def match_symptoms(symptom: dict):
-    # TODO: Implement symptom matching
-    return {"status": "success", "matches": []}
+    return {"message": "SensoryX backend is live 🚀"}
