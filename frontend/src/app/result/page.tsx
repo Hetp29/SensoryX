@@ -4,10 +4,56 @@ import { useEffect, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import TwinCard from '@/components/TwinCard';
 import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
 import NearbyDoctorsMap from '@/components/NearbyDoctorsMap';
+
+// Financial data types
+interface CategoryData {
+  total: number;
+  count: number;
+}
+
+interface SpendingSummary {
+  total_spending_12_months: number;
+  monthly_average: number;
+  transaction_count: number;
+  spending_trend: 'increasing' | 'decreasing' | 'stable';
+  categories: {
+    [key: string]: CategoryData;
+  };
+  highest_expense_category: {
+    name: string;
+    total: number;
+    percentage: number;
+  };
+  recent_transactions: Array<{
+    date: string;
+    merchant: string;
+    category: string;
+    amount: number;
+  }>;
+}
+
+interface RiskAssessment {
+  risk_level: 'low' | 'medium' | 'high';
+  alert_message: string;
+  affordable_monthly_payment: string;
+  recommendations: string[];
+}
+
+// Category colors
+const CATEGORY_COLORS: { [key: string]: string } = {
+  hospital: '#ef4444',
+  insurance: '#3b82f6',
+  pharmacy: '#10b981',
+  doctor_visits: '#8b5cf6',
+  medical_supplies: '#f59e0b',
+  dental: '#06b6d4',
+  vision: '#ec4899',
+};
 
 // Mock data - replace with actual API calls
 const mockData = {
@@ -86,6 +132,11 @@ function ResultPageContent() {
     symptoms: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [spendingData, setSpendingData] = useState<SpendingSummary | null>(null);
+  const [riskData, setRiskData] = useState<RiskAssessment | null>(null);
+
+  // Mock user ID - replace with actual user authentication
+  const userId = 'user123';
 
   useEffect(() => {
     // Get all user data from URL params
@@ -105,11 +156,86 @@ function ResultPageContent() {
       symptoms: searchParams.get('symptoms') || '',
     });
 
+    // Fetch financial data
+    fetchFinancialData();
+
     // Simulate API loading
     setTimeout(() => {
       setIsLoading(false);
     }, 1500);
   }, [searchParams]);
+
+  const fetchFinancialData = async () => {
+    try {
+      // Fetch spending summary
+      const spendingResponse = await fetch(`http://localhost:8000/api/financial/spending-summary/${userId}`);
+      if (spendingResponse.ok) {
+        const spendingJson = await spendingResponse.json();
+        setSpendingData(spendingJson);
+
+        // Fetch risk assessment only if spending data succeeded
+        const riskResponse = await fetch('http://localhost:8000/api/financial/risk-assessment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            monthly_income: 5000,
+            existing_medical_debt: 0,
+            estimated_treatment_cost: 1200,
+          }),
+        });
+        if (riskResponse.ok) {
+          const riskJson = await riskResponse.json();
+          setRiskData(riskJson);
+        }
+      } else {
+        // If API fails, use mock data
+        throw new Error('API not available');
+      }
+    } catch (err) {
+      // Set mock data for demonstration when API is unavailable
+      setSpendingData({
+        total_spending_12_months: 15634.68,
+        monthly_average: 1302.89,
+        transaction_count: 74,
+        spending_trend: 'increasing',
+        categories: {
+          pharmacy: { total: 924.03, count: 19 },
+          doctor_visits: { total: 1356.75, count: 13 },
+          hospital: { total: 6312.95, count: 7 },
+          insurance: { total: 4782.30, count: 11 },
+          medical_supplies: { total: 534.16, count: 8 },
+          dental: { total: 722.68, count: 6 },
+          vision: { total: 1001.81, count: 10 },
+        },
+        highest_expense_category: {
+          name: 'hospital',
+          total: 6312.95,
+          percentage: 40.4,
+        },
+        recent_transactions: [
+          { date: '2024-01-15', merchant: 'CVS Pharmacy', category: 'pharmacy', amount: 45.99 },
+          { date: '2024-01-12', merchant: 'Dr. Smith Clinic', category: 'doctor_visits', amount: 150.00 },
+          { date: '2024-01-08', merchant: 'Vision Care Center', category: 'vision', amount: 200.50 },
+          { date: '2024-01-05', merchant: 'Dental Associates', category: 'dental', amount: 125.00 },
+          { date: '2024-01-02', merchant: 'Insurance Premium', category: 'insurance', amount: 435.00 },
+        ],
+      });
+
+      setRiskData({
+        risk_level: 'medium',
+        alert_message: 'Moderate financial burden - payment plans recommended',
+        affordable_monthly_payment: '$150-200/month',
+        recommendations: [
+          'Contact hospital billing to discuss payment plans',
+          'Check if you qualify for financial assistance programs',
+          'Consider setting up a Health Savings Account (HSA)',
+          'Review insurance coverage to optimize benefits',
+        ],
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -359,12 +485,222 @@ function ResultPageContent() {
             </div>
           </div>
 
+          {/* Financial Impact Section */}
+          {spendingData && riskData && (
+            <motion.div
+              className="mt-12 space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {/* Section Header */}
+              <div className="text-center">
+                <h2 className="mb-2 bg-gradient-to-r from-emerald-300 via-emerald-200 to-emerald-400 bg-clip-text text-3xl font-bold text-transparent">
+                  Financial Impact & Coverage
+                </h2>
+                <p className="text-indigo-300">Understanding your treatment costs and payment options</p>
+              </div>
+
+              {/* Treatment Cost Estimates */}
+              <motion.div
+                className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-slate-900/70 to-emerald-950/30 backdrop-blur-sm overflow-hidden"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <div className="border-b border-emerald-500/20 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 p-6">
+                  <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                    <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Estimated Treatment Costs - {mockData.twin.diagnosis}
+                  </h3>
+                </div>
+
+                <div className="p-6">
+                  <div className="grid gap-6 md:grid-cols-3 mb-6">
+                    <div className="rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
+                      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-blue-400">Cost Range</p>
+                      <p className="text-2xl font-bold text-white">$500 - $2,000</p>
+                      <p className="text-xs text-blue-300 mt-1">Per treatment cycle</p>
+                    </div>
+                    <div className="rounded-lg border border-green-500/20 bg-green-950/20 p-4">
+                      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-green-400">Insurance Coverage</p>
+                      <p className="text-2xl font-bold text-white">60-80%</p>
+                      <p className="text-xs text-green-300 mt-1">Typical coverage rate</p>
+                    </div>
+                    <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-4">
+                      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-amber-400">Your Est. Cost</p>
+                      <p className="text-2xl font-bold text-white">$300 - $800</p>
+                      <p className="text-xs text-amber-300 mt-1">Out-of-pocket estimate</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-emerald-500/20 bg-slate-900/30 p-4">
+                    <h4 className="mb-3 font-semibold text-emerald-300">Typical Treatment Components:</h4>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-2 text-sm text-indigo-200">
+                        <svg className="h-5 w-5 flex-shrink-0 text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Specialist consultation ($150-300)
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-indigo-200">
+                        <svg className="h-5 w-5 flex-shrink-0 text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Diagnostic tests and imaging ($200-500)
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-indigo-200">
+                        <svg className="h-5 w-5 flex-shrink-0 text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Medication (Carbamazepine): $50-150/month
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-indigo-200">
+                        <svg className="h-5 w-5 flex-shrink-0 text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Physical therapy sessions: $100-200 per visit
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Financial Risk & Spending Grid */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Risk Assessment Card */}
+                <motion.div
+                  className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900/70 to-indigo-950/30 backdrop-blur-sm overflow-hidden"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="border-b border-indigo-500/20 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 p-6">
+                    <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                      <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      Financial Risk Assessment
+                    </h3>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <div className={`inline-block rounded-full px-4 py-2 text-sm font-semibold ${
+                        riskData.risk_level === 'low' ? 'bg-green-950/50 text-green-300 border border-green-500/30' :
+                        riskData.risk_level === 'medium' ? 'bg-yellow-950/50 text-yellow-300 border border-yellow-500/30' :
+                        'bg-red-950/50 text-red-300 border border-red-500/30'
+                      }`}>
+                        {riskData.risk_level.toUpperCase()} RISK
+                      </div>
+                    </div>
+
+                    <p className="mb-4 text-emerald-300">{riskData.alert_message}</p>
+
+                    <div className="mb-4 rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
+                      <div className="text-sm text-blue-400">Affordable Monthly Payment</div>
+                      <div className="text-2xl font-bold text-white">{riskData.affordable_monthly_payment}</div>
+                    </div>
+
+                    <div>
+                      <h4 className="mb-2 text-sm font-semibold text-indigo-400">Payment Plan Options:</h4>
+                      <ul className="space-y-2">
+                        {riskData.recommendations.map((rec, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-indigo-200">
+                            <svg className="h-5 w-5 flex-shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* 12-Month Spending Summary */}
+                <motion.div
+                  className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900/70 to-indigo-950/30 backdrop-blur-sm overflow-hidden"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  <div className="border-b border-indigo-500/20 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 p-6">
+                    <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                      <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      Your 12-Month Medical Spending
+                    </h3>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="mb-6 grid gap-4 grid-cols-2">
+                      <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-4">
+                        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-emerald-400">Total Spent</p>
+                        <p className="text-2xl font-bold text-white">
+                          ${spendingData.total_spending_12_months.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-blue-500/20 bg-blue-950/20 p-4">
+                        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-blue-400">Monthly Avg</p>
+                        <p className="text-2xl font-bold text-white">
+                          ${spendingData.monthly_average.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <h4 className="mb-3 text-sm font-semibold text-indigo-400">Top Categories:</h4>
+                      <div className="space-y-2">
+                        {Object.entries(spendingData.categories)
+                          .sort((a, b) => b[1].total - a[1].total)
+                          .slice(0, 5)
+                          .map(([category, data]) => {
+                            const percentage = (data.total / spendingData.total_spending_12_months) * 100;
+                            return (
+                              <div key={category} className="rounded-lg border border-indigo-500/20 bg-slate-900/30 p-3">
+                                <div className="mb-1 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className="h-3 w-3 rounded-full"
+                                      style={{ backgroundColor: CATEGORY_COLORS[category] || '#6366f1' }}
+                                    />
+                                    <span className="text-sm font-medium text-white capitalize">
+                                      {category.replace(/_/g, ' ')}
+                                    </span>
+                                  </div>
+                                  <span className="text-sm font-bold text-white">${data.total.toFixed(2)}</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-slate-800">
+                                  <div
+                                    className="h-1.5 rounded-full"
+                                    style={{
+                                      width: `${percentage}%`,
+                                      backgroundColor: CATEGORY_COLORS[category] || '#6366f1'
+                                    }}
+                                  />
+                                </div>
+                                <p className="mt-1 text-xs text-indigo-300">{data.count} transactions</p>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Additional Actions */}
           <motion.div
             className="mt-12 grid gap-4 sm:grid-cols-3"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.9 }}
           >
             <button className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
