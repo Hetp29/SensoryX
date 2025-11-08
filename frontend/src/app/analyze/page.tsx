@@ -29,10 +29,19 @@ interface Question {
 
 const chatQuestions: Question[] = [
   { id: '1', question: "Hi there! 👋 I'm here to help analyze your symptoms. Let's start with your name.", field: 'name', placeholder: 'Enter your name...' },
-  { id: '2', question: "Nice to meet you! How old are you?", field: 'age', placeholder: 'Enter your age...' },
+  { id: '2', question: "Nice to meet you! How old are you?", field: 'age', placeholder: 'e.g., 25' },
   { id: '3', question: "What's your gender?", field: 'gender', placeholder: 'e.g., Male, Female, Non-binary...' },
-  { id: '4', question: "Where are you currently located? (City, Country)", field: 'location', placeholder: 'e.g., Boston, MA' },
-  { id: '5', question: "Perfect! Now I have all your basic information. Please describe your symptoms in detail below. Include when they started, how they feel, and any patterns you've noticed.", field: 'symptoms', placeholder: '' },
+  { id: '4', question: "What's your height?", field: 'height', placeholder: 'e.g., 175 cm or 5\'9"' },
+  { id: '5', question: "What's your weight?", field: 'weight', placeholder: 'e.g., 70 kg or 154 lbs' },
+  { id: '6', question: "Do you have any pre-existing medical conditions or chronic illnesses? Please list them in detail.", field: 'medicalHistory', placeholder: 'e.g., Diabetes Type 2, Hypertension, Asthma, or type "None"' },
+  { id: '7', question: "Are you currently taking any medications? Please include the names and dosages if possible.", field: 'medications', placeholder: 'e.g., Metformin 500mg twice daily, Lisinopril 10mg daily, or type "None"' },
+  { id: '8', question: "Do you have any allergies?", field: 'hasAllergies', placeholder: 'Type "Yes" or "No"' },
+  { id: '9', question: "Please describe your allergies in detail. Include what you're allergic to and what type of reaction you experience.", field: 'allergyDetails', placeholder: 'e.g., Penicillin - causes severe rash and difficulty breathing, Peanuts - anaphylaxis, Pollen - seasonal rhinitis' },
+  { id: '10', question: "Have you had any surgeries in the past? If yes, please list them with approximate dates.", field: 'surgeryHistory', placeholder: 'e.g., Appendectomy (2018), Knee surgery (2020), or type "None"' },
+  { id: '11', question: "Do you smoke, drink alcohol, or use any recreational substances?", field: 'lifestyle', placeholder: 'e.g., Non-smoker, Occasional drinker (2-3 drinks per week), or type "None"' },
+  { id: '12', question: "Is there any family history of medical conditions? Please mention significant illnesses in your immediate family.", field: 'familyHistory', placeholder: 'e.g., Father - Heart disease, Mother - Diabetes, or type "None known"' },
+  { id: '13', question: "Where are you currently located? (City, Country)", field: 'location', placeholder: 'e.g., Boston, MA' },
+  { id: '14', question: "Perfect! Now I have all your medical information. Please describe your symptoms in detail below. Include when they started, how they feel, severity, frequency, and any patterns you've noticed.", field: 'symptoms', placeholder: '' },
 ];
 
 export default function AnalyzePage() {
@@ -43,6 +52,15 @@ export default function AnalyzePage() {
     name: '',
     age: '',
     gender: '',
+    height: '',
+    weight: '',
+    medicalHistory: '',
+    medications: '',
+    hasAllergies: '',
+    allergyDetails: '',
+    surgeryHistory: '',
+    lifestyle: '',
+    familyHistory: '',
     location: '',
     symptoms: '',
   });
@@ -101,11 +119,24 @@ export default function AnalyzePage() {
     // Clear input
     setCurrentAnswer('');
 
+    // Check if we need to skip the allergy details question
+    let nextIndex = currentQuestionIndex + 1;
+
+    // If user answered "No" to allergies (question 8), skip the allergy details question (question 9)
+    if (currentQuestion.field === 'hasAllergies' && currentAnswer.toLowerCase().includes('no')) {
+      nextIndex = currentQuestionIndex + 2; // Skip question 9 (allergyDetails)
+      // Set allergyDetails to "None" since they don't have allergies
+      setUserData(prev => ({
+        ...prev,
+        allergyDetails: 'None',
+      }));
+    }
+
     // Move to next question or finish
-    if (currentQuestionIndex < chatQuestions.length - 1) {
+    if (nextIndex < chatQuestions.length) {
       setIsTyping(true);
       setTimeout(() => {
-        const nextQuestion = chatQuestions[currentQuestionIndex + 1];
+        const nextQuestion = chatQuestions[nextIndex];
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
           type: 'ai',
@@ -113,7 +144,7 @@ export default function AnalyzePage() {
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, aiMessage]);
-        setCurrentQuestionIndex(prev => prev + 1);
+        setCurrentQuestionIndex(nextIndex);
         setIsTyping(false);
       }, 1500);
     }
@@ -153,25 +184,34 @@ export default function AnalyzePage() {
           <div className="absolute right-1/4 bottom-20 h-96 w-96 rounded-full bg-purple-600/20 blur-3xl"></div>
 
           {/* Floating Particles */}
-          {Array.from({ length: 15 }).map((_, i) => (
-            <motion.div
-              key={`particle-${i}`}
-              className="absolute h-1 w-1 rounded-full bg-indigo-400/30"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.2, 0.5, 0.2],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
+          {Array.from({ length: 15 }).map((_, i) => {
+            // Use deterministic values based on index to avoid hydration errors
+            const seed = (i + 1) * 7.919; // Use prime number for better distribution
+            const left = ((seed * 31) % 100);
+            const top = ((seed * 17) % 100);
+            const duration = 3 + ((i * 13) % 20) / 10;
+            const delay = ((i * 11) % 20) / 10;
+
+            return (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute h-1 w-1 rounded-full bg-indigo-400/30"
+                style={{
+                  left: `${left}%`,
+                  top: `${top}%`,
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  opacity: [0.2, 0.5, 0.2],
+                }}
+                transition={{
+                  duration,
+                  repeat: Infinity,
+                  delay,
+                }}
+              />
+            );
+          })}
         </div>
 
         {/* Navigation */}
