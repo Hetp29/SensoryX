@@ -1,6 +1,6 @@
 # backend/app/populate_data.py
 import asyncio
-from services.vector_service import upsert_symptom_vector
+from app.services.vector_service import upsert_symptom_vector
 import uuid
 
 async def populate_pinecone():
