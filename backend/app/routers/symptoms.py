@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any
 from ..services import vector_service
 from ..services import ai_service
 from ..services import knot_service
+from ..services import elevenlabs_service
 import uuid
 import base64
 
@@ -129,3 +130,102 @@ async def upload_symptom_image(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
+
+
+@router.post("/upload-voice")
+async def upload_voice_symptom(file: UploadFile = File(...), language: Optional[str] = None):
+    """
+    Transcribe voice recording of symptoms using ElevenLabs
+    Supports: mp3, wav, m4a, aac, ogg, flac, webm (up to 3GB)
+    """
+    try:
+        contents = await file.read()
+
+        transcription = await elevenlabs_service.transcribe_audio(
+            audio_data=contents,
+            filename=file.filename,
+            language_code=language
+        )
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "transcription": transcription
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Voice transcription failed: {str(e)}")
+
+
+@router.post("/voice-match", response_model=EnhancedMatchResponse)
+async def voice_symptom_match(
+    file: UploadFile = File(...),
+    language: Optional[str] = None,
+    patient_data: Optional[str] = None
+):
+    """
+    Complete voice-to-diagnosis pipeline:
+    1. Transcribe voice to text
+    2. Match symptoms with vector search
+    3. AI analysis with Gemini
+    4. Financial cost estimates
+    """
+    try:
+        contents = await file.read()
+
+        transcription = await elevenlabs_service.transcribe_audio(
+            audio_data=contents,
+            filename=file.filename,
+            language_code=language
+        )
+
+        symptom_text = transcription["text"]
+
+        import json
+        patient_dict = json.loads(patient_data) if patient_data else None
+
+        matches = await vector_service.query_similar_vectors(
+            symptom=symptom_text,
+            top_k=5
+        )
+
+        if not matches:
+            matches = vector_service.generate_fake_matches()
+
+        ai_analysis = await ai_service.analyze_symptoms(
+            symptom_description=symptom_text,
+            patient_data=patient_dict
+        )
+
+        treatment_costs = []
+        for match in matches[:3]:
+            cost_estimate = await knot_service.estimate_treatment_cost(
+                condition=match.get("condition", "Unknown"),
+                treatment=match.get("treatment", "Standard care")
+            )
+            treatment_costs.append(cost_estimate)
+
+        avg_treatment_cost = sum(c["average"] for c in treatment_costs) / len(treatment_costs) if treatment_costs else 0
+        financial_summary = {
+            "estimated_cost_range": {
+                "min": min((c["min"] for c in treatment_costs), default=0),
+                "max": max((c["max"] for c in treatment_costs), default=0),
+                "average": round(avg_treatment_cost, 2)
+            },
+            "insurance_coverage_avg": round(sum(c["insurance_covered"] for c in treatment_costs) / len(treatment_costs), 1) if treatment_costs else 70,
+            "transcription": transcription
+        }
+
+        return {
+            "matches": matches,
+            "ai_analysis": ai_analysis,
+            "conditions": ai_analysis.get("conditions", []),
+            "recommendations": ai_analysis.get("recommendations", []),
+            "urgency_level": ai_analysis.get("urgency_level", "medium"),
+            "urgency_reasoning": ai_analysis.get("urgency_reasoning", "Consult a healthcare provider"),
+            "treatment_costs": treatment_costs,
+            "financial_summary": financial_summary
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Voice symptom matching failed: {str(e)}")
