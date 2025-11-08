@@ -14,6 +14,8 @@ app.add_middleware(
 
 # Register routers
 app.include_router(symptoms.router, prefix="/api", tags=["Symptoms"])
+app.include_router(symptoms.router, prefix="/api/symptoms", tags=["symptoms"])
+
 
 @app.get("/")
 async def root():
