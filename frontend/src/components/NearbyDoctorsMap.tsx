@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 interface NearbyDoctorsMapProps {
   location: string;
@@ -10,6 +11,16 @@ interface NearbyDoctorsMapProps {
 // Mock doctor data - replace with actual API data
 const mockDoctors = [
   {
+    id: 0,
+    name: 'AI Doctor',
+    specialty: 'AI-Powered Medical Analysis',
+    address: 'Virtual Consultation',
+    distance: 'Instant Access',
+    rating: 4.9,
+    phone: 'Available 24/7',
+    isAI: true,
+  },
+  {
     id: 1,
     name: 'Dr. Sarah Johnson',
     specialty: 'General Practitioner',
@@ -17,6 +28,7 @@ const mockDoctors = [
     distance: '0.5 miles',
     rating: 4.8,
     phone: '(555) 123-4567',
+    isAI: false,
   },
   {
     id: 2,
@@ -26,6 +38,7 @@ const mockDoctors = [
     distance: '1.2 miles',
     rating: 4.9,
     phone: '(555) 234-5678',
+    isAI: false,
   },
   {
     id: 3,
@@ -35,6 +48,7 @@ const mockDoctors = [
     distance: '1.8 miles',
     rating: 4.7,
     phone: '(555) 345-6789',
+    isAI: false,
   },
   {
     id: 4,
@@ -44,6 +58,7 @@ const mockDoctors = [
     distance: '2.1 miles',
     rating: 4.9,
     phone: '(555) 456-7890',
+    isAI: false,
   },
 ];
 
@@ -103,8 +118,12 @@ export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
           {mockDoctors.map((doctor, index) => (
             <motion.div
               key={doctor.id}
-              className={`cursor-pointer rounded-lg border p-4 transition-all ${
-                selectedDoctor === doctor.id
+              className={`relative cursor-pointer rounded-lg border p-4 transition-all ${
+                doctor.isAI
+                  ? selectedDoctor === doctor.id
+                    ? 'border-purple-500 bg-gradient-to-br from-purple-950/40 to-pink-950/30'
+                    : 'border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-pink-950/10 hover:border-purple-500/50 hover:from-purple-950/30 hover:to-pink-950/20'
+                  : selectedDoctor === doctor.id
                   ? 'border-indigo-500 bg-indigo-950/30'
                   : 'border-indigo-500/20 bg-slate-900/30 hover:border-indigo-500/40 hover:bg-slate-900/50'
               }`}
@@ -113,19 +132,39 @@ export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
               transition={{ delay: 0.5 + index * 0.1 }}
               onClick={() => setSelectedDoctor(doctor.id)}
             >
+              {/* AI Doctor Badge */}
+              {doctor.isAI && (
+                <div className="absolute top-4 right-4 z-10">
+                  <div className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
+                    💰 BEST VALUE
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h5 className="text-lg font-semibold text-white">{doctor.name}</h5>
-                    <div className="flex items-center gap-1 rounded-full bg-amber-950/30 px-2 py-0.5 text-xs font-medium text-amber-300">
+                    {doctor.isAI && (
+                      <svg className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                    <h5 className={`text-lg font-semibold ${doctor.isAI ? 'text-purple-200' : 'text-white'}`}>
+                      {doctor.name}
+                    </h5>
+                    <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      doctor.isAI ? 'bg-purple-950/30 text-purple-300' : 'bg-amber-950/30 text-amber-300'
+                    }`}>
                       <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                       {doctor.rating}
                     </div>
                   </div>
-                  <p className="mt-1 text-sm text-indigo-300">{doctor.specialty}</p>
-                  <div className="mt-2 flex flex-col gap-1 text-sm text-indigo-400/80">
+                  <p className={`mt-1 text-sm ${doctor.isAI ? 'text-purple-300' : 'text-indigo-300'}`}>
+                    {doctor.specialty}
+                  </p>
+                  <div className={`mt-2 flex flex-col gap-1 text-sm ${doctor.isAI ? 'text-purple-400/80' : 'text-indigo-400/80'}`}>
                     <div className="flex items-center gap-2">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -140,10 +179,29 @@ export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
                       {doctor.phone}
                     </div>
                   </div>
+                  {doctor.isAI && (
+                    <div className="mt-3 rounded-lg border border-green-500/30 bg-green-950/20 px-3 py-2">
+                      <p className="text-xs text-green-300 font-medium">
+                        💵 Free Consultation • Save $150-300
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <button className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30">
-                  Book
-                </button>
+                {doctor.isAI ? (
+                  <Link href="/ai-consultation">
+                    <motion.button
+                      className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Consult
+                    </motion.button>
+                  </Link>
+                ) : (
+                  <button className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30">
+                    Book
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

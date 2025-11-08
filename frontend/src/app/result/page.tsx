@@ -172,27 +172,29 @@ function ResultPageContent() {
       if (spendingResponse.ok) {
         const spendingJson = await spendingResponse.json();
         setSpendingData(spendingJson);
-      }
 
-      // Fetch risk assessment
-      const riskResponse = await fetch('http://localhost:8000/api/financial/risk-assessment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          monthly_income: 5000,
-          existing_medical_debt: 0,
-          estimated_treatment_cost: 1200,
-        }),
-      });
-      if (riskResponse.ok) {
-        const riskJson = await riskResponse.json();
-        setRiskData(riskJson);
+        // Fetch risk assessment only if spending data succeeded
+        const riskResponse = await fetch('http://localhost:8000/api/financial/risk-assessment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            monthly_income: 5000,
+            existing_medical_debt: 0,
+            estimated_treatment_cost: 1200,
+          }),
+        });
+        if (riskResponse.ok) {
+          const riskJson = await riskResponse.json();
+          setRiskData(riskJson);
+        }
+      } else {
+        // If API fails, use mock data
+        throw new Error('API not available');
       }
     } catch (err) {
-      console.error('Error fetching financial data:', err);
-      // Set mock data for demonstration
+      // Set mock data for demonstration when API is unavailable
       setSpendingData({
         total_spending_12_months: 15634.68,
         monthly_average: 1302.89,
@@ -465,10 +467,28 @@ function ResultPageContent() {
             </motion.div>
           )}
 
+          {/* Main Grid */}
+          <div className="grid gap-8 lg:grid-cols-3">
+            {/* Left Column - Symptom Twin */}
+            <div className="lg:col-span-2 space-y-8">
+              <TwinCard twin={mockData.twin} />
+              {/* Nearby Doctors Map */}
+              {userData.location && (
+                <NearbyDoctorsMap location={userData.location} />
+              )}
+            </div>
+
+            {/* Right Column - Analysis & Recommendations */}
+            <div className="space-y-8">
+              <SignatureCard conditions={mockData.conditions} />
+              <RecommendationCard recommendations={mockData.recommendations} />
+            </div>
+          </div>
+
           {/* Financial Impact Section */}
           {spendingData && riskData && (
             <motion.div
-              className="mb-8 space-y-6"
+              className="mt-12 space-y-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -675,30 +695,12 @@ function ResultPageContent() {
             </motion.div>
           )}
 
-          {/* Main Grid */}
-          <div className="grid gap-8 lg:grid-cols-3">
-            {/* Left Column - Symptom Twin */}
-            <div className="lg:col-span-2 space-y-8">
-              <TwinCard twin={mockData.twin} />
-              {/* Nearby Doctors Map */}
-              {userData.location && (
-                <NearbyDoctorsMap location={userData.location} />
-              )}
-            </div>
-
-            {/* Right Column - Analysis & Recommendations */}
-            <div className="space-y-8">
-              <SignatureCard conditions={mockData.conditions} />
-              <RecommendationCard recommendations={mockData.recommendations} />
-            </div>
-          </div>
-
           {/* Additional Actions */}
           <motion.div
             className="mt-12 grid gap-4 sm:grid-cols-3"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.9 }}
           >
             <button className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
