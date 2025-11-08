@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from ..services import vector_service
+from ..db import snowflake_client
 from ..services import ai_service
 from ..services import knot_service
 from ..services import elevenlabs_service
@@ -100,7 +101,17 @@ async def add_symptom(request: dict):
         metadata=request
     )
 
-    return result
+    # Persist to Snowflake (best-effort). Don't fail the request if warehouse is unavailable.
+    try:
+        snow_result = await snowflake_client.insert_symptom_record({
+            "id": request.get("id", result.get("id")),
+            "description": request.get("description"),
+            "metadata": request
+        })
+    except Exception as e:
+        snow_result = {"status": "error", "error": str(e)}
+
+    return {"vector_upsert": result, "warehouse": snow_result}
 
 
 @router.post("/upload-image")
