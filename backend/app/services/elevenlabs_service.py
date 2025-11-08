@@ -27,12 +27,14 @@ async def transcribe_audio(
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             files = {
-                "audio": (filename, audio_data, get_content_type(filename))
+                "file": (filename, audio_data, get_content_type(filename))
             }
             headers = {
                 "xi-api-key": ELEVENLABS_API_KEY
             }
-            data = {}
+            data = {
+                "model_id": "scribe_v1"
+            }
             if language_code:
                 data["language_code"] = language_code
 
