@@ -51,9 +51,7 @@ function SignatureWaveform({ similarity = 95 }: { similarity: number }) {
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={waveData.points.length}
-            array={new Float32Array(waveData.points.flatMap(p => [p.x, p.y, p.z]))}
-            itemSize={3}
+            args={[new Float32Array(waveData.points.flatMap(p => [p.x, p.y, p.z])), 3]}
           />
         </bufferGeometry>
         <lineBasicMaterial color="#6366f1" linewidth={2} />
@@ -64,9 +62,7 @@ function SignatureWaveform({ similarity = 95 }: { similarity: number }) {
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={waveData.particlePositions.length / 3}
-            array={waveData.particlePositions}
-            itemSize={3}
+            args={[waveData.particlePositions, 3]}
           />
         </bufferGeometry>
         <pointsMaterial

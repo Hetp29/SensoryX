@@ -9,7 +9,7 @@ export default function Home() {
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.8, ease: 'easeOut' },
+    transition: { duration: 0.8 },
   };
 
   const staggerChildren = {
@@ -32,7 +32,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
+              transition={{ duration: 0.8 }}
             >
               {/* Badge */}
               <motion.div

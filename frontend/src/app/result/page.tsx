@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -68,7 +68,7 @@ const mockData = {
   ]
 };
 
-export default function ResultPage() {
+function ResultPageContent() {
   const searchParams = useSearchParams();
   const [userData, setUserData] = useState({
     name: '',
@@ -390,5 +390,29 @@ export default function ResultPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
+        <div className="text-center">
+          <motion.div
+            className="mb-6 inline-flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <svg className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </motion.div>
+          <h2 className="mb-2 text-2xl font-bold text-white">Loading...</h2>
+          <p className="text-indigo-300">Please wait...</p>
+        </div>
+      </div>
+    }>
+      <ResultPageContent />
+    </Suspense>
   );
 }

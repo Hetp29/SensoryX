@@ -141,9 +141,7 @@ function EnergyParticle({ radius, speed, offset, color }: {
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={positions.length / 3}
-            array={positions}
-            itemSize={3}
+            args={[positions, 3]}
           />
         </bufferGeometry>
         <pointsMaterial
@@ -243,9 +241,7 @@ function NeuralNetwork() {
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={connections.length / 3}
-            array={connections}
-            itemSize={3}
+            args={[connections, 3]}
           />
         </bufferGeometry>
         <lineBasicMaterial
@@ -302,15 +298,11 @@ function AmbientParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={particles.positions.length / 3}
-          array={particles.positions}
-          itemSize={3}
+          args={[particles.positions, 3]}
         />
         <bufferAttribute
           attach="attributes-color"
-          count={particles.colors.length / 3}
-          array={particles.colors}
-          itemSize={3}
+          args={[particles.colors, 3]}
         />
       </bufferGeometry>
       <pointsMaterial
