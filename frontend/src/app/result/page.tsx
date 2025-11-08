@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import TwinCard from '@/components/TwinCard';
 import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
+import NearbyDoctorsMap from '@/components/NearbyDoctorsMap';
 
 // Mock data - replace with actual API calls
 const mockData = {
@@ -343,8 +344,12 @@ export default function ResultPage() {
           {/* Main Grid */}
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left Column - Symptom Twin */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-8">
               <TwinCard twin={mockData.twin} />
+              {/* Nearby Doctors Map */}
+              {userData.location && (
+                <NearbyDoctorsMap location={userData.location} />
+              )}
             </div>
 
             {/* Right Column - Analysis & Recommendations */}

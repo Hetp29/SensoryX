@@ -40,7 +40,7 @@ const chatQuestions: Question[] = [
   { id: '10', question: "Have you had any surgeries in the past? If yes, please list them with approximate dates.", field: 'surgeryHistory', placeholder: 'e.g., Appendectomy (2018), Knee surgery (2020), or type "None"' },
   { id: '11', question: "Do you smoke, drink alcohol, or use any recreational substances?", field: 'lifestyle', placeholder: 'e.g., Non-smoker, Occasional drinker (2-3 drinks per week), or type "None"' },
   { id: '12', question: "Is there any family history of medical conditions? Please mention significant illnesses in your immediate family.", field: 'familyHistory', placeholder: 'e.g., Father - Heart disease, Mother - Diabetes, or type "None known"' },
-  { id: '13', question: "Where are you currently located? (City, Country)", field: 'location', placeholder: 'e.g., Boston, MA' },
+  { id: '13', question: "Where are you currently located? (City, State)", field: 'location', placeholder: 'e.g., Boston, MA' },
   { id: '14', question: "Perfect! Now I have all your medical information. Please describe your symptoms in detail below. Include when they started, how they feel, severity, frequency, and any patterns you've noticed.", field: 'symptoms', placeholder: '' },
 ];
 
@@ -64,6 +64,8 @@ export default function AnalyzePage() {
     location: '',
     symptoms: '',
   });
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -150,14 +152,39 @@ export default function AnalyzePage() {
     }
   };
 
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    setUploadedImages(prev => [...prev, ...newFiles]);
+
+    // Create preview URLs
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Remove image
+  const handleRemoveImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Handle final submission
   const handleFinalSubmit = () => {
     if (!userData.symptoms.trim()) return;
 
     setIsLoading(true);
 
-    // TODO: Send data to backend
+    // TODO: Send data to backend (including images)
     console.log('User Data to be saved:', userData);
+    console.log('Uploaded Images:', uploadedImages);
 
     // Simulate API call
     setTimeout(() => {
@@ -417,6 +444,14 @@ export default function AnalyzePage() {
                 ) : (
                   /* Detailed symptoms textarea */
                   <div className="space-y-4">
+                    {/* Symptoms Header */}
+                    <div className="mb-2 flex items-center gap-2">
+                      <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 className="text-lg font-semibold text-white">Describe Your Symptoms</h3>
+                    </div>
+
                     <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-slate-900/70 to-indigo-950/50 backdrop-blur-sm p-1">
                       <textarea
                         value={userData.symptoms}
@@ -430,6 +465,57 @@ export default function AnalyzePage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-indigo-400/70">Be as detailed as possible</span>
                       <span className="text-indigo-300">{userData.symptoms.length}/2000</span>
+                    </div>
+
+                    {/* Image Upload Section */}
+                    <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-slate-900/70 to-indigo-950/50 backdrop-blur-sm p-6">
+                      <div className="mb-4 flex items-center gap-2">
+                        <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-white">Upload Images (Optional)</h3>
+                      </div>
+                      <p className="mb-4 text-sm text-indigo-300">
+                        Upload images of rashes, swelling, injuries, or any visual symptoms to help with diagnosis
+                      </p>
+
+                      {/* Upload Button */}
+                      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-indigo-500/30 bg-indigo-950/30 px-6 py-4 transition-all hover:border-indigo-500/50 hover:bg-indigo-950/50">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                        <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span className="text-sm font-medium text-indigo-300">Click to upload images</span>
+                      </label>
+
+                      {/* Image Previews */}
+                      {imagePreviews.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="group relative aspect-square overflow-hidden rounded-lg border border-indigo-500/30">
+                              <img
+                                src={preview}
+                                alt={`Upload ${index + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                              <button
+                                onClick={() => handleRemoveImage(index)}
+                                className="absolute right-2 top-2 rounded-full bg-red-600 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                              >
+                                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <motion.button
