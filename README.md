@@ -51,8 +51,8 @@ SensoryX is the first AI that "feels" your symptoms and matches you with others 
 
 ## 👥 Team
 
-- [Your Name]
-- [Partner Name]
+- Het Patel
+- Jay Vora 
 
 ## 🔗 Links
 
