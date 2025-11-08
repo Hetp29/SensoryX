@@ -8,3 +8,4 @@ python-dotenv
 google-generativeai
 snowflake-connector-python
 Pillow
+dedalus-labs
