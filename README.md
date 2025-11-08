@@ -1,9 +1,8 @@
-# SensoryX
-# Phantom - AI That Experiences Your Symptoms
+# SensoryX - AI That Experiences Your Symptoms
 
-## 🧠 What is Phantom?
+## 🧠 What is SensoryX?
 
-Phantom is the first AI that "feels" your symptoms and matches you with others who experienced the exact same sensations. Describe your symptoms naturally, and Phantom finds your "symptom twin" - someone who had identical feelings and shows you what happened to them.
+SensoryX is the first AI that "feels" your symptoms and matches you with others who experienced the exact same sensations. Describe your symptoms naturally, and SensoryX finds your "symptom twin" - someone who had identical feelings and shows you what happened to them.
 
 ## 🎯 Problem We Solve
 
@@ -21,7 +20,7 @@ Phantom is the first AI that "feels" your symptoms and matches you with others w
 
 ## 🚀 Tech Stack
 
-- **Frontend**: Next.js, React, Three.js (visualization)
+- **Frontend**: React, TypeScript, Three.js (3D visualization), Tailwind CSS
 - **Backend**: FastAPI (Python)
 - **AI/ML**: GPT-4, Gemini API, Vector embeddings
 - **Database**: Pinecone (vector search), Snowflake (symptom warehouse)
@@ -52,8 +51,8 @@ Phantom is the first AI that "feels" your symptoms and matches you with others w
 
 ## 👥 Team
 
-- Het Patel
-- Jay Vora 
+- [Your Name]
+- [Partner Name]
 
 ## 🔗 Links
 
