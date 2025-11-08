@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+openai
+pinecone-client
+redis
+python-dotenv
+google-generativeai
+snowflake-connector-python
