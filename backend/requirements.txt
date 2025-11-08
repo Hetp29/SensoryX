@@ -7,3 +7,4 @@ redis
 python-dotenv
 google-generativeai
 snowflake-connector-python
+Pillow

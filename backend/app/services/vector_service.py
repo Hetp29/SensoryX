@@ -1,26 +1,62 @@
 # backend/app/services/vector_service.py
 from pinecone import Pinecone
 import os
-import random
 from typing import List, Dict
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 # load environment variables
 load_dotenv()
 
+# initialize Gemini for embeddings (hackathon track!)
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+if gemini_api_key:
+    genai.configure(api_key=gemini_api_key)
+    print("✓ Gemini embeddings initialized")
+else:
+    print("Warning: Gemini API key not found")
+
 # initialize Pinecone with fallback
-api_key = os.getenv("PINECONE_API_KEY")
-if api_key:
-    pc = Pinecone(api_key=api_key)
-    index = pc.Index("symptoms")
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+pinecone_index_name = os.getenv("PINECONE_INDEX_NAME", "symptoms")  # Use env var, default to "symptoms"
+
+if pinecone_api_key:
+    pc = Pinecone(api_key=pinecone_api_key)
+    index = pc.Index(pinecone_index_name)
 else:
     print("Warning: Pinecone API key not found, using mock data")
     pc = None
     index = None
+
 async def create_embedding(text: str) -> List[float]:
-    """Create 2048-dim embedding to match your Pinecone index"""
-    # For hackathon: just use random embeddings
-    return [random.random() for _ in range(2048)]
+    """
+    Create 2048-dim embedding using Google Gemini (padded to match Pinecone index)
+    Using Gemini embeddings for hackathon track!
+    """
+    if not gemini_api_key:
+        print("Warning: Gemini not initialized, using fallback zero vector")
+        return [0.0] * 2048
+
+    try:
+        # Use Gemini's embedding model (returns 768 dimensions)
+        result = genai.embed_content(
+            model="models/text-embedding-004",
+            content=text,
+            task_type="retrieval_document"
+        )
+
+        embedding = result['embedding']
+
+        # Pad from 768 to 2048 dimensions with zeros
+        if len(embedding) < 2048:
+            padding = [0.0] * (2048 - len(embedding))
+            embedding = embedding + padding
+
+        return embedding
+    except Exception as e:
+        print(f"Gemini embedding error: {e}")
+        # Return zero vector as fallback
+        return [0.0] * 2048
 
 async def upsert_symptom_vector(symptom_id: str, description: str, metadata: Dict):
     """Add a symptom to Pinecone"""
