@@ -1,13 +1,30 @@
+# app/db/pinecone_client.py
 import os
-import pinecone
-from app.utils.config import PINECONE_API_KEY
+from pinecone import Pinecone, ServerlessSpec
 
-pinecone.init(api_key=PINECONE_API_KEY, environment="us-east1-gcp")  # change env if needed
+# Import API key from environment
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 
-INDEX_NAME = "sensoryx-symptoms"
+# Initialize Pinecone client safely
+if PINECONE_API_KEY:
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+else:
+    print("⚠️ PINECONE_API_KEY not set. Pinecone client will not initialize.")
+    pc = None
 
-# Check if index exists, else create
-if INDEX_NAME not in pinecone.list_indexes():
-    pinecone.create_index(INDEX_NAME, dimension=1536)  # 1536 = GPT-3/4 embedding size
+# Index setup
+index_name = "sensoryx-index"
+index = None
 
-index = pinecone.Index(INDEX_NAME)
+if pc:
+    # Check if the index exists
+    if index_name not in pc.list_indexes().names():
+        pc.create_index(
+            name=index_name,
+            dimension=1536,  # your embedding size
+            metric="cosine",  # or 'euclidean'
+            spec=ServerlessSpec(cloud="aws", region="us-east-1")
+        )
+
+    # Connect to the index
+    index = pc.Index(index_name)
