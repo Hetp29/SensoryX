@@ -58,6 +58,103 @@ async def transcribe_audio(
         raise Exception(f"ElevenLabs API error: {str(e)}")
 
 
+async def text_to_speech(
+    text: str,
+    voice_id: str = "21m00Tcm4TlvDq8ikWAM",  # Rachel - Professional, calm voice
+    model_id: str = "eleven_monolingual_v1",
+    stability: float = 0.5,
+    similarity_boost: float = 0.75
+) -> bytes:
+    """
+    Convert text to speech using ElevenLabs TTS
+
+    Args:
+        text: Text to convert to speech
+        voice_id: ElevenLabs voice ID (default: Rachel)
+        model_id: TTS model to use
+        stability: Voice stability (0-1)
+        similarity_boost: Voice similarity (0-1)
+
+    Returns:
+        Audio bytes (MP3 format)
+    """
+    if MOCK_ENABLED:
+        # Return mock audio data (empty bytes for now)
+        return b"MOCK_AUDIO_DATA"
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            headers = {
+                "xi-api-key": ELEVENLABS_API_KEY,
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "text": text,
+                "model_id": model_id,
+                "voice_settings": {
+                    "stability": stability,
+                    "similarity_boost": similarity_boost
+                }
+            }
+
+            response = await client.post(
+                f"{ELEVENLABS_BASE_URL}/text-to-speech/{voice_id}",
+                headers=headers,
+                json=payload
+            )
+            response.raise_for_status()
+
+            return response.content
+
+    except httpx.HTTPError as e:
+        raise Exception(f"ElevenLabs TTS error: {str(e)}")
+
+
+async def get_available_voices() -> Dict:
+    """
+    Get list of available ElevenLabs voices
+    """
+    if MOCK_ENABLED:
+        return {
+            "voices": [
+                {
+                    "voice_id": "21m00Tcm4TlvDq8ikWAM",
+                    "name": "Rachel",
+                    "category": "premade",
+                    "description": "Calm, professional female voice - perfect for medical consultations"
+                },
+                {
+                    "voice_id": "AZnzlk1XvdvUeBnXmlld",
+                    "name": "Domi",
+                    "category": "premade",
+                    "description": "Strong, confident female voice"
+                },
+                {
+                    "voice_id": "EXAVITQu4vr4xnSDxMaL",
+                    "name": "Bella",
+                    "category": "premade",
+                    "description": "Soft, soothing female voice"
+                }
+            ]
+        }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            headers = {"xi-api-key": ELEVENLABS_API_KEY}
+
+            response = await client.get(
+                f"{ELEVENLABS_BASE_URL}/voices",
+                headers=headers
+            )
+            response.raise_for_status()
+
+            return response.json()
+
+    except httpx.HTTPError as e:
+        raise Exception(f"ElevenLabs API error: {str(e)}")
+
+
 def get_content_type(filename: str) -> str:
     extension = filename.lower().split('.')[-1]
     content_types = {
