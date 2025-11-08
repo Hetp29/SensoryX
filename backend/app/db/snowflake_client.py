@@ -134,6 +134,56 @@ class SnowflakeClient:
             )
         """)
 
+        # AI vs Human Doctor Choice Tracking
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.CONSULTATION_CHOICES (
+                CHOICE_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                SYMPTOM_EVENT_ID STRING,
+                TIMESTAMP TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                CHOICE_TYPE STRING,
+                CONSULTATION_TYPE STRING,
+                TIER STRING,
+                COST FLOAT,
+                REASON VARIANT,
+                METADATA VARIANT
+            ) CLUSTER BY (TIMESTAMP, USER_ID, CHOICE_TYPE)
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.AI_CONSULTATIONS (
+                CONSULTATION_ID STRING PRIMARY KEY,
+                SESSION_ID STRING,
+                USER_ID STRING,
+                STARTED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                ENDED_AT TIMESTAMP_LTZ,
+                TIER STRING,
+                MESSAGE_COUNT INT,
+                TOTAL_COST FLOAT,
+                SUMMARY VARIANT,
+                SATISFACTION_RATING INT,
+                METADATA VARIANT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.DOCTOR_BOOKINGS (
+                BOOKING_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                DOCTOR_ID STRING,
+                BOOKED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                APPOINTMENT_DATE DATE,
+                APPOINTMENT_TIME STRING,
+                APPOINTMENT_TYPE STRING,
+                SPECIALTY STRING,
+                TOTAL_COST FLOAT,
+                INSURANCE_COVERAGE FLOAT,
+                OUT_OF_POCKET FLOAT,
+                STATUS STRING,
+                METADATA VARIANT
+            )
+        """)
+
         # STAGING layer - validated and enriched
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS STAGING.SYMPTOM_RECORDS (
@@ -171,6 +221,39 @@ class SnowflakeClient:
                 COMMON_SYMPTOMS ARRAY,
                 SEASONAL_TREND VARIANT,
                 UPDATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
+            )
+        """)
+
+        # AI vs Human Doctor Analytics
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ANALYTICS.CHOICE_PATTERNS (
+                ANALYSIS_DATE DATE PRIMARY KEY,
+                TOTAL_CHOICES INT,
+                AI_CHOICES INT,
+                HUMAN_CHOICES INT,
+                AI_PERCENTAGE FLOAT,
+                HUMAN_PERCENTAGE FLOAT,
+                AVG_AI_COST FLOAT,
+                AVG_HUMAN_COST FLOAT,
+                TOTAL_COST_SAVINGS FLOAT,
+                TOP_SPECIALTIES ARRAY,
+                CHOICE_REASONS VARIANT,
+                UPDATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
+            ) CLUSTER BY (ANALYSIS_DATE)
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ANALYTICS.CONSULTATION_OUTCOMES (
+                OUTCOME_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                CONSULTATION_TYPE STRING,
+                SYMPTOM_CATEGORY STRING,
+                OUTCOME STRING,
+                SATISFACTION_SCORE INT,
+                COST_EFFECTIVENESS FLOAT,
+                FOLLOW_UP_NEEDED BOOLEAN,
+                TIME_TO_RESOLUTION_DAYS INT,
+                CREATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
             )
         """)
 
@@ -416,6 +499,198 @@ class SnowflakeClient:
             conn.commit()
         except:
             pass
+
+    async def track_consultation_choice(
+        self,
+        user_id: str,
+        symptom_event_id: str,
+        choice_type: str,  # "ai_doctor" or "human_doctor"
+        consultation_type: str,  # "free", "premium", "in_person", etc.
+        tier: Optional[str] = None,
+        cost: float = 0,
+        reason: Optional[Dict] = None,
+        metadata: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Track user choice between AI and Human doctor consultation
+        """
+        conn = await self._get_connection()
+        cursor = conn.cursor()
+
+        try:
+            choice_id = f"choice_{datetime.utcnow().timestamp()}"
+
+            cursor.execute("""
+                INSERT INTO RAW.CONSULTATION_CHOICES
+                (CHOICE_ID, USER_ID, SYMPTOM_EVENT_ID, CHOICE_TYPE, CONSULTATION_TYPE, TIER, COST, REASON, METADATA)
+                SELECT %s, %s, %s, %s, %s, %s, %s, PARSE_JSON(%s), PARSE_JSON(%s)
+            """, (
+                choice_id,
+                user_id,
+                symptom_event_id,
+                choice_type,
+                consultation_type,
+                tier or consultation_type,
+                cost,
+                json.dumps(reason or {}),
+                json.dumps(metadata or {})
+            ))
+
+            conn.commit()
+            return {"status": "success", "choice_id": choice_id}
+
+        except Exception as e:
+            conn.rollback()
+            return {"status": "error", "error": str(e)}
+
+    async def track_ai_consultation(
+        self,
+        session_id: str,
+        user_id: str,
+        tier: str,
+        message_count: int,
+        total_cost: float,
+        summary: Optional[Dict] = None,
+        satisfaction_rating: Optional[int] = None
+    ) -> Dict:
+        """
+        Track AI doctor consultation session
+        """
+        conn = await self._get_connection()
+        cursor = conn.cursor()
+
+        try:
+            consultation_id = f"ai_consult_{datetime.utcnow().timestamp()}"
+
+            cursor.execute("""
+                INSERT INTO RAW.AI_CONSULTATIONS
+                (CONSULTATION_ID, SESSION_ID, USER_ID, TIER, MESSAGE_COUNT, TOTAL_COST, SUMMARY, SATISFACTION_RATING)
+                SELECT %s, %s, %s, %s, %s, %s, PARSE_JSON(%s), %s
+            """, (
+                consultation_id,
+                session_id,
+                user_id,
+                tier,
+                message_count,
+                total_cost,
+                json.dumps(summary or {}),
+                satisfaction_rating
+            ))
+
+            conn.commit()
+            return {"status": "success", "consultation_id": consultation_id}
+
+        except Exception as e:
+            conn.rollback()
+            return {"status": "error", "error": str(e)}
+
+    async def track_doctor_booking(
+        self,
+        booking_id: str,
+        user_id: str,
+        doctor_id: str,
+        appointment_date: str,
+        appointment_time: str,
+        appointment_type: str,
+        specialty: str,
+        total_cost: float,
+        insurance_coverage: float = 0,
+        out_of_pocket: float = 0,
+        status: str = "confirmed",
+        metadata: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Track human doctor booking
+        """
+        conn = await self._get_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO RAW.DOCTOR_BOOKINGS
+                (BOOKING_ID, USER_ID, DOCTOR_ID, APPOINTMENT_DATE, APPOINTMENT_TIME, APPOINTMENT_TYPE,
+                 SPECIALTY, TOTAL_COST, INSURANCE_COVERAGE, OUT_OF_POCKET, STATUS, METADATA)
+                SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, PARSE_JSON(%s)
+            """, (
+                booking_id,
+                user_id,
+                doctor_id,
+                appointment_date,
+                appointment_time,
+                appointment_type,
+                specialty,
+                total_cost,
+                insurance_coverage,
+                out_of_pocket,
+                status,
+                json.dumps(metadata or {})
+            ))
+
+            conn.commit()
+            return {"status": "success", "booking_id": booking_id}
+
+        except Exception as e:
+            conn.rollback()
+            return {"status": "error", "error": str(e)}
+
+    async def get_choice_analytics(self, days: int = 30) -> Dict:
+        """
+        Get analytics on AI vs Human doctor choices
+        """
+        conn = await self._get_connection()
+        cursor = conn.cursor(DictCursor)
+
+        try:
+            cursor.execute("""
+                SELECT
+                    CHOICE_TYPE,
+                    COUNT(*) as total_choices,
+                    AVG(COST) as avg_cost,
+                    SUM(COST) as total_cost,
+                    COUNT(DISTINCT USER_ID) as unique_users
+                FROM RAW.CONSULTATION_CHOICES
+                WHERE TIMESTAMP >= DATEADD(day, -%s, CURRENT_TIMESTAMP())
+                GROUP BY CHOICE_TYPE
+            """, (days,))
+
+            results = cursor.fetchall()
+
+            analytics = {
+                "period_days": days,
+                "by_choice_type": {}
+            }
+
+            total_choices = sum(r['TOTAL_CHOICES'] for r in results)
+
+            for row in results:
+                choice_type = row['CHOICE_TYPE']
+                analytics["by_choice_type"][choice_type] = {
+                    "total_choices": row['TOTAL_CHOICES'],
+                    "percentage": (row['TOTAL_CHOICES'] / total_choices * 100) if total_choices > 0 else 0,
+                    "avg_cost": row['AVG_COST'],
+                    "total_cost": row['TOTAL_COST'],
+                    "unique_users": row['UNIQUE_USERS']
+                }
+
+            # Calculate cost savings
+            ai_cost = analytics["by_choice_type"].get("ai_doctor", {}).get("total_cost", 0)
+            human_cost = analytics["by_choice_type"].get("human_doctor", {}).get("total_cost", 0)
+            ai_choices = analytics["by_choice_type"].get("ai_doctor", {}).get("total_choices", 0)
+
+            # If users chose AI instead of human, estimate savings
+            avg_human_cost = 200  # average human doctor visit
+            estimated_savings = ai_choices * avg_human_cost - ai_cost
+
+            analytics["cost_savings"] = {
+                "ai_total_cost": ai_cost,
+                "human_total_cost": human_cost,
+                "estimated_savings": estimated_savings
+            }
+
+            return analytics
+
+        except Exception as e:
+            return {"error": str(e)}
 
 
 class MockSnowflakeConnection:
