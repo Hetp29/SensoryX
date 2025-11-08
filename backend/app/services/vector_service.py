@@ -1,26 +1,48 @@
 # backend/app/services/vector_service.py
 from pinecone import Pinecone
 import os
-import random
 from typing import List, Dict
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # load environment variables
 load_dotenv()
 
+# initialize OpenAI client
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key:
+    openai_client = OpenAI(api_key=openai_api_key)
+else:
+    print("Warning: OpenAI API key not found")
+    openai_client = None
+
 # initialize Pinecone with fallback
-api_key = os.getenv("PINECONE_API_KEY")
-if api_key:
-    pc = Pinecone(api_key=api_key)
-    index = pc.Index("symptoms")
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+if pinecone_api_key:
+    pc = Pinecone(api_key=pinecone_api_key)
+    index = pc.Index("sensoryx-index")  # Fixed: match pinecone_client.py index name
 else:
     print("Warning: Pinecone API key not found, using mock data")
     pc = None
     index = None
+
 async def create_embedding(text: str) -> List[float]:
-    """Create 2048-dim embedding to match your Pinecone index"""
-    # For hackathon: just use random embeddings
-    return [random.random() for _ in range(2048)]
+    """Create 1536-dim embedding using OpenAI text-embedding-3-small"""
+    if not openai_client:
+        print("Warning: OpenAI client not initialized, using fallback")
+        # Fallback to zeros if OpenAI is unavailable
+        return [0.0] * 1536
+
+    try:
+        response = openai_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"Embedding error: {e}")
+        # Return zero vector as fallback
+        return [0.0] * 1536
 
 async def upsert_symptom_vector(symptom_id: str, description: str, metadata: Dict):
     """Add a symptom to Pinecone"""
