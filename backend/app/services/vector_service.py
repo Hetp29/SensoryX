@@ -3,11 +3,20 @@ from pinecone import Pinecone
 import os
 import random
 from typing import List, Dict
+from dotenv import load_dotenv
 
-# Initialize Pinecone
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-index = pc.Index("symptoms")
+# load environment variables
+load_dotenv()
 
+# initialize Pinecone with fallback
+api_key = os.getenv("PINECONE_API_KEY")
+if api_key:
+    pc = Pinecone(api_key=api_key)
+    index = pc.Index("symptoms")
+else:
+    print("Warning: Pinecone API key not found, using mock data")
+    pc = None
+    index = None
 async def create_embedding(text: str) -> List[float]:
     """Create 2048-dim embedding to match your Pinecone index"""
     # For hackathon: just use random embeddings
