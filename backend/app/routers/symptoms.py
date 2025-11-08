@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from ..services import vector_service
 from ..services import ai_service
+from ..services import knot_service
 import uuid
 import base64
 
@@ -35,49 +36,57 @@ class Recommendation(BaseModel):
     icon: Optional[str] = None
 
 class EnhancedMatchResponse(BaseModel):
-    # Symptom twins from vector search
     matches: List[SymptomMatch]
-    # AI analysis
     ai_analysis: Dict[str, Any]
-    # Top predicted conditions
     conditions: List[ConditionPrediction]
-    # Personalized recommendations
     recommendations: List[Recommendation]
-    # Urgency assessment
     urgency_level: str
     urgency_reasoning: str
+    treatment_costs: Optional[List[Dict[str, Any]]] = None
+    financial_summary: Optional[Dict[str, Any]] = None
 
 @router.post("/match", response_model=EnhancedMatchResponse)
 async def match_symptoms(request: SymptomRequest):
-    """
-    Find symptom twins and provide AI-powered analysis
-    Returns matches, condition predictions, and recommendations
-    """
-
-    # Step 1: Find similar symptoms using vector search
     matches = await vector_service.query_similar_vectors(
         symptom=request.description,
         top_k=5
     )
 
     if not matches:
-        # Fallback to demo data
         matches = vector_service.generate_fake_matches()
 
-    # Step 2: Get AI analysis of symptoms
     ai_analysis = await ai_service.analyze_symptoms(
         symptom_description=request.description,
         patient_data=request.patientData
     )
 
-    # Step 3: Build response
+    treatment_costs = []
+    for match in matches[:3]:
+        cost_estimate = await knot_service.estimate_treatment_cost(
+            condition=match.get("condition", "Unknown"),
+            treatment=match.get("treatment", "Standard care")
+        )
+        treatment_costs.append(cost_estimate)
+
+    avg_treatment_cost = sum(c["average"] for c in treatment_costs) / len(treatment_costs) if treatment_costs else 0
+    financial_summary = {
+        "estimated_cost_range": {
+            "min": min((c["min"] for c in treatment_costs), default=0),
+            "max": max((c["max"] for c in treatment_costs), default=0),
+            "average": round(avg_treatment_cost, 2)
+        },
+        "insurance_coverage_avg": round(sum(c["insurance_covered"] for c in treatment_costs) / len(treatment_costs), 1) if treatment_costs else 70
+    }
+
     return {
         "matches": matches,
         "ai_analysis": ai_analysis,
         "conditions": ai_analysis.get("conditions", []),
         "recommendations": ai_analysis.get("recommendations", []),
         "urgency_level": ai_analysis.get("urgency_level", "medium"),
-        "urgency_reasoning": ai_analysis.get("urgency_reasoning", "Consult a healthcare provider")
+        "urgency_reasoning": ai_analysis.get("urgency_reasoning", "Consult a healthcare provider"),
+        "treatment_costs": treatment_costs,
+        "financial_summary": financial_summary
     }
 
 @router.post("/add")
