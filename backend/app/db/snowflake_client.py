@@ -134,6 +134,56 @@ class SnowflakeClient:
             )
         """)
 
+        # AI vs Human Doctor Choice Tracking
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.CONSULTATION_CHOICES (
+                CHOICE_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                SYMPTOM_EVENT_ID STRING,
+                TIMESTAMP TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                CHOICE_TYPE STRING,
+                CONSULTATION_TYPE STRING,
+                TIER STRING,
+                COST FLOAT,
+                REASON VARIANT,
+                METADATA VARIANT
+            ) CLUSTER BY (TIMESTAMP, USER_ID, CHOICE_TYPE)
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.AI_CONSULTATIONS (
+                CONSULTATION_ID STRING PRIMARY KEY,
+                SESSION_ID STRING,
+                USER_ID STRING,
+                STARTED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                ENDED_AT TIMESTAMP_LTZ,
+                TIER STRING,
+                MESSAGE_COUNT INT,
+                TOTAL_COST FLOAT,
+                SUMMARY VARIANT,
+                SATISFACTION_RATING INT,
+                METADATA VARIANT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.DOCTOR_BOOKINGS (
+                BOOKING_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                DOCTOR_ID STRING,
+                BOOKED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                APPOINTMENT_DATE DATE,
+                APPOINTMENT_TIME STRING,
+                APPOINTMENT_TYPE STRING,
+                SPECIALTY STRING,
+                TOTAL_COST FLOAT,
+                INSURANCE_COVERAGE FLOAT,
+                OUT_OF_POCKET FLOAT,
+                STATUS STRING,
+                METADATA VARIANT
+            )
+        """)
+
         # STAGING layer - validated and enriched
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS STAGING.SYMPTOM_RECORDS (
@@ -171,6 +221,39 @@ class SnowflakeClient:
                 COMMON_SYMPTOMS ARRAY,
                 SEASONAL_TREND VARIANT,
                 UPDATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
+            )
+        """)
+
+        # AI vs Human Doctor Analytics
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ANALYTICS.CHOICE_PATTERNS (
+                ANALYSIS_DATE DATE PRIMARY KEY,
+                TOTAL_CHOICES INT,
+                AI_CHOICES INT,
+                HUMAN_CHOICES INT,
+                AI_PERCENTAGE FLOAT,
+                HUMAN_PERCENTAGE FLOAT,
+                AVG_AI_COST FLOAT,
+                AVG_HUMAN_COST FLOAT,
+                TOTAL_COST_SAVINGS FLOAT,
+                TOP_SPECIALTIES ARRAY,
+                CHOICE_REASONS VARIANT,
+                UPDATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
+            ) CLUSTER BY (ANALYSIS_DATE)
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ANALYTICS.CONSULTATION_OUTCOMES (
+                OUTCOME_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                CONSULTATION_TYPE STRING,
+                SYMPTOM_CATEGORY STRING,
+                OUTCOME STRING,
+                SATISFACTION_SCORE INT,
+                COST_EFFECTIVENESS FLOAT,
+                FOLLOW_UP_NEEDED BOOLEAN,
+                TIME_TO_RESOLUTION_DAYS INT,
+                CREATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
             )
         """)
 
