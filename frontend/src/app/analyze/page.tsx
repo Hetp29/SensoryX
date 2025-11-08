@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function AnalyzePage() {
   const [symptoms, setSymptoms] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleAnalyze = async () => {
     if (!symptoms.trim()) {
@@ -19,8 +21,8 @@ export default function AnalyzePage() {
     // Simulate API call - replace with actual API integration
     setTimeout(() => {
       setIsLoading(false);
-      // Navigate to results page or show results
-      console.log('Analyzing symptoms:', symptoms);
+      // Navigate to results page with symptoms
+      router.push(`/result?symptoms=${encodeURIComponent(symptoms)}`);
     }, 3000);
   };
 
