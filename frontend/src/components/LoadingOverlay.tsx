@@ -1,12 +1,34 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingOverlayProps {
   isLoading: boolean;
 }
 
+const LOADING_MESSAGES = [
+  'Querying Snowflake warehouse...',
+  'Searching 10M+ symptom records...',
+  'Finding your symptom twin...',
+  'Analyzing historical medical data...',
+  'Vectorizing symptom signatures...',
+  'Matching with similar cases...',
+];
+
 export default function LoadingOverlay({ isLoading }: LoadingOverlayProps) {
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   if (!isLoading) return null;
 
   return (
@@ -44,25 +66,21 @@ export default function LoadingOverlay({ isLoading }: LoadingOverlayProps) {
           />
         </div>
 
-        {/* Loading text with animated dots */}
-        <motion.div
-          className="flex items-center gap-2 text-lg font-medium text-white"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <span>Analyzing your symptoms</span>
-          <motion.span
-            animate={{ opacity: [0, 1, 0] }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            ...
-          </motion.span>
-        </motion.div>
+        {/* Rotating loading messages */}
+        <div className="h-8 flex items-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={messageIndex}
+              className="flex items-center gap-2 text-lg font-medium text-white"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <span>{LOADING_MESSAGES[messageIndex]}</span>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {/* Progress indicator */}
         <motion.div
@@ -90,7 +108,7 @@ export default function LoadingOverlay({ isLoading }: LoadingOverlayProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          AI is processing your sensory data...
+          <span className="font-semibold text-blue-400">Snowflake</span> + <span className="font-semibold text-purple-400">Pinecone</span> + <span className="font-semibold text-green-400">Gemini</span> working together
         </motion.p>
       </div>
     </motion.div>
