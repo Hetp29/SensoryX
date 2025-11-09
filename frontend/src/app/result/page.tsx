@@ -10,6 +10,7 @@ import TwinCard from '@/components/TwinCard';
 import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
 import NearbyDoctorsMap from '@/components/NearbyDoctorsMap';
+import AIDoctorModal from '@/components/AIDoctorModal';
 
 // Financial data types
 interface CategoryData {
@@ -136,6 +137,7 @@ function ResultPageContent() {
   const [spendingData, setSpendingData] = useState<SpendingSummary | null>(null);
   const [riskData, setRiskData] = useState<RiskAssessment | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isAIDoctorModalOpen, setIsAIDoctorModalOpen] = useState(false);
 
   // Mock user ID - replace with actual user authentication
   const userId = 'user123';
@@ -734,8 +736,47 @@ function ResultPageContent() {
             <div className="space-y-8">
               <SignatureCard conditions={analysisData?.conditions || mockData.conditions} />
               <RecommendationCard recommendations={analysisData?.recommendations || mockData.recommendations} />
+
+              {/* AI Doctor Consultation Button */}
+              <motion.button
+                onClick={() => setIsAIDoctorModalOpen(true)}
+                className="w-full rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-left transition-all hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                      <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Consult AI Doctor</h3>
+                      <p className="text-sm text-indigo-200">Get personalized medical guidance instantly</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-300 border border-green-500/30">
+                      FREE
+                    </span>
+                    <span className="text-xs text-indigo-200">24/7 Available</span>
+                  </div>
+                </div>
+              </motion.button>
             </div>
           </div>
+
+          {/* AI Doctor Modal */}
+          <AIDoctorModal
+            isOpen={isAIDoctorModalOpen}
+            onClose={() => setIsAIDoctorModalOpen(false)}
+            symptoms={userData.symptoms || analysisData?.twin?.symptom_description || ''}
+            patientData={userData}
+          />
 
           {/* Financial Impact Section */}
           {spendingData && riskData && (
