@@ -50,12 +50,6 @@ export default function Navbar() {
             >
               About
             </Link>
-            <Link
-              href="/result"
-              className="text-sm font-medium text-indigo-200 transition-colors hover:text-white"
-            >
-              Results Demo
-            </Link>
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
@@ -120,13 +114,6 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
               >
                 About
-              </Link>
-              <Link
-                href="/result"
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-indigo-200 transition-colors hover:bg-indigo-950/50 hover:text-white"
-                onClick={() => setIsOpen(false)}
-              >
-                Results Demo
               </Link>
               <Link
                 href="/analyze"
