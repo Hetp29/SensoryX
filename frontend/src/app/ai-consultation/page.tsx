@@ -534,7 +534,7 @@ export default function AIConsultation() {
                 <motion.button
                   onClick={toggleListening}
                   disabled={isLoading}
-                  className={`self-end rounded-lg p-3 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`rounded-lg p-3 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     isListening
                       ? 'bg-gradient-to-r from-red-600 to-pink-600 shadow-red-500/30 animate-pulse'
                       : 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/30 hover:from-indigo-700 hover:to-purple-700'
@@ -556,7 +556,7 @@ export default function AIConsultation() {
                 {isSpeaking && (
                   <motion.button
                     onClick={stopSpeech}
-                    className="self-end rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 p-3 text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-700 hover:to-orange-700"
+                    className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 p-3 text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-700 hover:to-orange-700"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -574,7 +574,7 @@ export default function AIConsultation() {
                 <motion.button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || isLoading}
-                  className="self-end rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 p-3 text-white shadow-lg shadow-purple-500/30 transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 p-3 text-white shadow-lg shadow-purple-500/30 transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
