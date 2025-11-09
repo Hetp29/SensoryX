@@ -11,6 +11,7 @@ import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
 import NearbyDoctorsMap from '@/components/NearbyDoctorsMap';
 import AIDoctorModal from '@/components/AIDoctorModal';
+import NotificationPanel from '@/components/NotificationPanel';
 
 // Financial data types
 interface CategoryData {
@@ -138,6 +139,7 @@ function ResultPageContent() {
   const [riskData, setRiskData] = useState<RiskAssessment | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isAIDoctorModalOpen, setIsAIDoctorModalOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
   // Mock user ID - replace with actual user authentication
   const userId = 'user123';
@@ -533,6 +535,18 @@ function ResultPageContent() {
               >
                 New Analysis
               </Link>
+              <button
+                onClick={() => setIsNotificationPanelOpen(true)}
+                className="relative rounded-lg bg-indigo-600/20 p-2.5 text-indigo-300 transition-colors hover:bg-indigo-600/30 hover:text-white"
+                title="Notifications"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  3
+                </span>
+              </button>
               <button className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30">
                 Download Report
               </button>
@@ -776,6 +790,13 @@ function ResultPageContent() {
             onClose={() => setIsAIDoctorModalOpen(false)}
             symptoms={userData.symptoms || analysisData?.twin?.symptom_description || ''}
             patientData={userData}
+          />
+
+          {/* Notification Panel */}
+          <NotificationPanel
+            isOpen={isNotificationPanelOpen}
+            onClose={() => setIsNotificationPanelOpen(false)}
+            userId={userId}
           />
 
           {/* Financial Impact Section */}
