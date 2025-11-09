@@ -184,6 +184,54 @@ class SnowflakeClient:
             )
         """)
 
+        # Notification Tracking
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.NOTIFICATIONS (
+                NOTIFICATION_ID STRING PRIMARY KEY,
+                USER_ID STRING,
+                NOTIFICATION_TYPE STRING,
+                TITLE STRING,
+                MESSAGE STRING,
+                PRIORITY STRING,
+                CHANNELS ARRAY,
+                STATUS STRING,
+                CREATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP(),
+                SCHEDULED_TIME TIMESTAMP_LTZ,
+                SENT_AT TIMESTAMP_LTZ,
+                READ_AT TIMESTAMP_LTZ,
+                METADATA VARIANT
+            ) CLUSTER BY (CREATED_AT, USER_ID, NOTIFICATION_TYPE)
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS RAW.NOTIFICATION_DELIVERIES (
+                DELIVERY_ID STRING PRIMARY KEY,
+                NOTIFICATION_ID STRING,
+                CHANNEL STRING,
+                DELIVERY_STATUS STRING,
+                DELIVERED_AT TIMESTAMP_LTZ,
+                ERROR_MESSAGE STRING,
+                VOICE_NOTIFICATION_ENABLED BOOLEAN,
+                METADATA VARIANT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ANALYTICS.NOTIFICATION_METRICS (
+                METRIC_DATE DATE PRIMARY KEY,
+                TOTAL_NOTIFICATIONS INT,
+                SENT_COUNT INT,
+                READ_COUNT INT,
+                DISMISSED_COUNT INT,
+                FAILED_COUNT INT,
+                READ_RATE FLOAT,
+                VOICE_NOTIFICATIONS_COUNT INT,
+                NOTIFICATIONS_BY_TYPE VARIANT,
+                AVG_TIME_TO_READ_MINUTES FLOAT,
+                UPDATED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
+            ) CLUSTER BY (METRIC_DATE)
+        """)
+
         # STAGING layer - validated and enriched
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS STAGING.SYMPTOM_RECORDS (
