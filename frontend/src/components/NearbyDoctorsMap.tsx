@@ -6,6 +6,20 @@ import Link from 'next/link';
 
 interface NearbyDoctorsMapProps {
   location: string;
+  userData?: {
+    name: string;
+    age: string;
+    gender: string;
+    height: string;
+    weight: string;
+    medicalHistory: string;
+    medications: string;
+    allergyDetails: string;
+    surgeryHistory: string;
+    lifestyle: string;
+    familyHistory: string;
+    symptoms: string;
+  };
 }
 
 // Mock doctor data - replace with actual API data
@@ -62,7 +76,7 @@ const mockDoctors = [
   },
 ];
 
-export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
+export default function NearbyDoctorsMap({ location, userData }: NearbyDoctorsMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
 
@@ -132,15 +146,6 @@ export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
               transition={{ delay: 0.5 + index * 0.1 }}
               onClick={() => setSelectedDoctor(doctor.id)}
             >
-              {/* AI Doctor Badge */}
-              {doctor.isAI && (
-                <div className="absolute top-4 right-4 z-10">
-                  <div className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
-                    💰 BEST VALUE
-                  </div>
-                </div>
-              )}
-
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -188,7 +193,25 @@ export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
                   )}
                 </div>
                 {doctor.isAI ? (
-                  <Link href="/ai-consultation">
+                  <Link
+                    href={{
+                      pathname: '/ai-consultation',
+                      query: userData ? {
+                        name: userData.name,
+                        age: userData.age,
+                        gender: userData.gender,
+                        height: userData.height,
+                        weight: userData.weight,
+                        medicalHistory: userData.medicalHistory,
+                        medications: userData.medications,
+                        allergyDetails: userData.allergyDetails,
+                        surgeryHistory: userData.surgeryHistory,
+                        lifestyle: userData.lifestyle,
+                        familyHistory: userData.familyHistory,
+                        symptoms: userData.symptoms,
+                      } : {}
+                    }}
+                  >
                     <motion.button
                       className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30"
                       whileHover={{ scale: 1.05 }}
@@ -198,9 +221,17 @@ export default function NearbyDoctorsMap({ location }: NearbyDoctorsMapProps) {
                     </motion.button>
                   </Link>
                 ) : (
-                  <button className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30">
+                  <motion.button
+                    onClick={() => {
+                      const searchQuery = `book appointment ${doctor.name} ${doctor.specialty} ${location}`;
+                      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+                    }}
+                    className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     Book
-                  </button>
+                  </motion.button>
                 )}
               </div>
             </motion.div>
