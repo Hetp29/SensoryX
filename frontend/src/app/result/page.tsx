@@ -428,27 +428,30 @@ function ResultPageContent() {
     yPosition += 5;
 
     // Symptom Twin Match
+    const twin = analysisData?.twin || mockData.twin;
     addText('SYMPTOM TWIN MATCH', 16, true);
-    addText(`Match Similarity: ${mockData.twin.similarity}%`, 12, true);
-    addText(`Demographics: ${mockData.twin.age}y, ${mockData.twin.gender}, ${mockData.twin.location}`);
-    addText(`Symptom Description: "${mockData.twin.symptomDescription}"`);
-    addText(`Diagnosis: ${mockData.twin.diagnosis}`);
-    addText(`Timeline: ${mockData.twin.timeline}`);
-    addText(`Treatment: ${mockData.twin.treatment}`);
-    addText(`Outcome: ${mockData.twin.outcome}`);
+    addText(`Match Similarity: ${twin.similarity}%`, 12, true);
+    addText(`Demographics: ${twin.age}y, ${twin.gender}, ${twin.location}`);
+    addText(`Symptom Description: "${twin.symptom_description || twin.symptomDescription}"`);
+    addText(`Diagnosis: ${twin.diagnosis}`);
+    addText(`Timeline: ${twin.timeline}`);
+    addText(`Treatment: ${twin.treatment}`);
+    addText(`Outcome: ${twin.outcome}`);
     yPosition += 5;
 
     // Possible Conditions
+    const conditions = analysisData?.conditions || mockData.conditions;
     addText('POSSIBLE CONDITIONS (AI-ANALYZED)', 16, true);
-    mockData.conditions.forEach((condition, index) => {
+    conditions.forEach((condition, index) => {
       addText(`${index + 1}. ${condition.name} - ${condition.probability}% probability`, 11, true);
       addText(`   ${condition.description}`);
     });
     yPosition += 5;
 
     // Recommendations
+    const recommendations = analysisData?.recommendations || mockData.recommendations;
     addText('RECOMMENDATIONS', 16, true);
-    mockData.recommendations.forEach((rec, index) => {
+    recommendations.forEach((rec, index) => {
       addText(`${index + 1}. ${rec.title.toUpperCase()} (${rec.type})`, 11, true);
       addText(`   ${rec.description}`);
     });
@@ -762,7 +765,7 @@ function ResultPageContent() {
                     <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Estimated Treatment Costs - {mockData.twin.diagnosis}
+                    Estimated Treatment Costs - {(analysisData?.twin || mockData.twin).diagnosis}
                   </h3>
                 </div>
 
@@ -953,10 +956,11 @@ function ResultPageContent() {
           >
             <button
               onClick={() => {
+                const twin = analysisData?.twin || mockData.twin;
                 if (navigator.share) {
                   navigator.share({
                     title: 'My SensoryX Analysis Results',
-                    text: `Check out my symptom analysis results from SensoryX - ${mockData.twin.similarity}% match found!`,
+                    text: `Check out my symptom analysis results from SensoryX - ${twin.similarity}% match found!`,
                     url: window.location.href,
                   }).catch((error) => console.log('Error sharing:', error));
                 } else {
