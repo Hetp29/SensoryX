@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import symptoms, financial, analytics, agents, ai_doctor, doctors
+from app.routers import symptoms, financial, analytics, agents, ai_doctor, doctors, predictions
 
 app = FastAPI(title="SensoryX API")
 
@@ -18,6 +18,7 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"]
 app.include_router(agents.router, prefix="/api/agents", tags=["Multi-Agent System"])
 app.include_router(ai_doctor.router, prefix="/api/ai-doctor", tags=["AI Doctor Consultation"])
 app.include_router(doctors.router, prefix="/api/doctors", tags=["Human Doctor Discovery"])
+app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictive Intelligence"])
 
 
 @app.get("/")
