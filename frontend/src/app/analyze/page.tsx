@@ -537,6 +537,24 @@ export default function AnalyzePage() {
                         Analyze My Symptoms
                       </span>
                     </motion.button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const resp = await fetch('/api/photon/start', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ context: { user: userData } })
+                          });
+                          const data = await resp.json();
+                          console.log('Photon session started', data);
+                        } catch (err) {
+                          console.error('Failed to start Photon session', err);
+                        }
+                      }}
+                      className="mt-3 w-full rounded-xl border border-indigo-500/30 bg-transparent px-6 py-3 text-sm font-medium text-indigo-300 hover:bg-indigo-950/40"
+                    >
+                      Start Hybrid Session (Photon)
+                    </button>
                   </div>
                 )}
               </motion.div>
