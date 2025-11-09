@@ -22,10 +22,17 @@ const iconPaths: Record<string, string> = {
 
 const typeColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
   immediate: { bg: 'bg-red-950/30', border: 'border-red-500/30', text: 'text-red-200', badge: 'bg-red-600/30 text-red-200' },
+  high: { bg: 'bg-red-950/30', border: 'border-red-500/30', text: 'text-red-200', badge: 'bg-red-600/30 text-red-200' },
   consult: { bg: 'bg-indigo-950/30', border: 'border-indigo-500/30', text: 'text-indigo-200', badge: 'bg-indigo-600/30 text-indigo-200' },
+  medium: { bg: 'bg-amber-950/30', border: 'border-amber-500/30', text: 'text-amber-200', badge: 'bg-amber-600/30 text-amber-200' },
   lifestyle: { bg: 'bg-green-950/30', border: 'border-green-500/30', text: 'text-green-200', badge: 'bg-green-600/30 text-green-200' },
+  low: { bg: 'bg-green-950/30', border: 'border-green-500/30', text: 'text-green-200', badge: 'bg-green-600/30 text-green-200' },
   monitor: { bg: 'bg-amber-950/30', border: 'border-amber-500/30', text: 'text-amber-200', badge: 'bg-amber-600/30 text-amber-200' },
+  general: { bg: 'bg-indigo-950/30', border: 'border-indigo-500/30', text: 'text-indigo-200', badge: 'bg-indigo-600/30 text-indigo-200' },
 };
+
+// Default colors for unknown types
+const defaultColors = { bg: 'bg-indigo-950/30', border: 'border-indigo-500/30', text: 'text-indigo-200', badge: 'bg-indigo-600/30 text-indigo-200' };
 
 export default function RecommendationCard({ recommendations }: RecommendationCardProps) {
   return (
@@ -54,7 +61,7 @@ export default function RecommendationCard({ recommendations }: RecommendationCa
       <div className="p-6">
         <div className="space-y-4">
           {recommendations.map((rec, index) => {
-            const colors = typeColors[rec.type];
+            const colors = typeColors[rec.type] || defaultColors;
             return (
               <motion.div
                 key={index}
