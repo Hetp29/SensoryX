@@ -14,7 +14,7 @@ gemini_model = None
 
 if gemini_api_key:
     genai.configure(api_key=gemini_api_key)
-    gemini_model = genai.GenerativeModel('gemini-pro')
+    gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
 
 # In-memory conversation store (replace with Redis/DB in production)
