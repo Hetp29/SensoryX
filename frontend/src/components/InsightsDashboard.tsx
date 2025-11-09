@@ -17,7 +17,13 @@ interface InsightsDashboardProps {
 }
 
 export default function InsightsDashboard({ isOpen, onClose }: InsightsDashboardProps) {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    active_symptom_reports: 0,
+    trending_symptoms: [],
+    active_outbreaks: [],
+    total_users: 0,
+    geographic_hotspots: [],
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -153,7 +159,7 @@ export default function InsightsDashboard({ isOpen, onClose }: InsightsDashboard
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-indigo-300 mb-1">Active Reports</p>
-                      <p className="text-3xl font-bold text-white">{metrics.active_symptom_reports.toLocaleString()}</p>
+                      <p className="text-3xl font-bold text-white">{metrics?.active_symptom_reports?.toLocaleString() ?? '0'}</p>
                     </div>
                     <div className="rounded-full bg-indigo-600/30 p-3">
                       <svg className="h-8 w-8 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -173,7 +179,7 @@ export default function InsightsDashboard({ isOpen, onClose }: InsightsDashboard
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-indigo-300 mb-1">Total Users</p>
-                      <p className="text-3xl font-bold text-white">{metrics.total_users.toLocaleString()}</p>
+                      <p className="text-3xl font-bold text-white">{metrics?.total_users?.toLocaleString() ?? '0'}</p>
                     </div>
                     <div className="rounded-full bg-purple-600/30 p-3">
                       <svg className="h-8 w-8 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,7 +199,7 @@ export default function InsightsDashboard({ isOpen, onClose }: InsightsDashboard
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-indigo-300 mb-1">Active Outbreaks</p>
-                      <p className="text-3xl font-bold text-white">{metrics.active_outbreaks.length}</p>
+                      <p className="text-3xl font-bold text-white">{metrics?.active_outbreaks?.length ?? 0}</p>
                     </div>
                     <div className="rounded-full bg-amber-600/30 p-3">
                       <svg className="h-8 w-8 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -253,7 +259,7 @@ export default function InsightsDashboard({ isOpen, onClose }: InsightsDashboard
                   Active Outbreaks
                 </h4>
                 <div className="grid gap-4 md:grid-cols-2">
-                  {metrics.active_outbreaks.map((outbreak, index) => {
+                  {metrics.active_outbreaks?.map((outbreak, index) => {
                     const colors = getSeverityColor(outbreak.severity);
                     return (
                       <div key={index} className={`rounded-lg border ${colors.border} ${colors.bg} p-4`}>
