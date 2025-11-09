@@ -27,6 +27,17 @@ SensoryX is the first AI that "feels" your symptoms and matches you with others 
 - **APIs**: Knot (financial correlation), ElevenLabs (voice), Dedalus (analysis)
 - **Deployment**: DigitalOcean
 
+## Local Photon Hybrid demo
+
+To demo the Photon hybrid integration locally:
+
+1. Start the backend: `uvicorn app.main:app --reload --port 8000`
+2. Start the frontend: `npm run dev` in the `frontend/` folder
+3. On the Analyze page, fill in the questionnaire and click "Start Hybrid Session (Photon)". This calls `/api/photon/start` and returns a session id.
+4. Use `/api/photon/message` to send messages to the hybrid agent (it proxies to existing services for demo).
+
+Note: This is a lightweight demo to show hybrid session flow. Full iMessage integration and rapid-ai-dev prototyping are out of scope for the hack but are the recommended next steps.
+
 ## 🏆 HackPrinceton Tracks
 
 ### Main Track
