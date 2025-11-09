@@ -197,7 +197,7 @@ export default function Home() {
         {/* How It Works Section */}
         <section id="how-it-works" className="relative px-4 py-32">
           <div className="mx-auto max-w-7xl">
-            <motion.div className="mb-20 text-center" {...fadeInUp}>
+            <motion.div className="mb-16 text-center" {...fadeInUp}>
               <h2 className="mb-4 text-4xl font-bold text-white sm:text-5xl md:text-6xl">
                 How It Works
               </h2>
@@ -206,34 +206,37 @@ export default function Home() {
               </p>
             </motion.div>
 
-            <div className="grid gap-12 lg:grid-cols-3">
+            <motion.div
+              className="grid gap-8 lg:grid-cols-3"
+              variants={staggerChildren}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+            >
               {[
-                { num: 1, title: "Describe Your Symptoms", desc: "Share your sensory experiences in natural language. Our AI understands context and nuance.", delay: 0.2 },
-                { num: 2, title: "AI Analysis", desc: "Advanced neural networks process your input, cross-referencing with vast medical databases.", delay: 0.4 },
-                { num: 3, title: "Get Insights", desc: "Receive comprehensive analysis with actionable recommendations and next steps.", delay: 0.6 }
+                { num: 1, title: "Describe Your Symptoms", desc: "Share your sensory experiences in natural language. Our AI understands context and nuance." },
+                { num: 2, title: "AI Analysis", desc: "Advanced neural networks process your input, cross-referencing with vast medical databases." },
+                { num: 3, title: "Get Insights", desc: "Receive comprehensive analysis with actionable recommendations and next steps." }
               ].map((step) => (
                 <motion.div
                   key={step.num}
-                  className="text-center"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: step.delay }}
+                  className="group rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 to-purple-950/20 p-8 backdrop-blur-sm transition-all hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
+                  variants={fadeInUp}
                 >
                   <div className="mb-6 flex justify-center">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-3xl font-bold text-white shadow-lg shadow-indigo-500/40">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-2xl font-bold text-white shadow-lg shadow-indigo-500/40">
                       {step.num}
                     </div>
                   </div>
-                  <h3 className="mb-4 text-2xl font-semibold text-white">
+                  <h3 className="mb-3 text-center text-2xl font-semibold text-white">
                     {step.title}
                   </h3>
-                  <p className="text-indigo-300/80">
+                  <p className="text-center text-indigo-300/80">
                     {step.desc}
                   </p>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 

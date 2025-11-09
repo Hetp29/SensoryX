@@ -87,15 +87,6 @@ export default function RecommendationCard({ recommendations }: RecommendationCa
           })}
         </div>
 
-        {/* CTA Button */}
-        <motion.button
-          className="mt-6 w-full rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 text-center font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all hover:shadow-indigo-500/50"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          Book Consultation with a Specialist
-        </motion.button>
-
         {/* Financial Impact (Capital One Track) */}
         <motion.div
           className="mt-4 rounded-lg border border-green-500/30 bg-green-950/20 p-4"

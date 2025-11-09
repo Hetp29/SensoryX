@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import AIDoctorAvatar from '@/components/AIDoctorAvatar';
 import Link from 'next/link';
@@ -13,23 +14,246 @@ interface Message {
   timestamp: Date;
 }
 
+interface UserData {
+  name: string;
+  age: string;
+  gender: string;
+  height: string;
+  weight: string;
+  medicalHistory: string;
+  medications: string;
+  allergyDetails: string;
+  surgeryHistory: string;
+  lifestyle: string;
+  familyHistory: string;
+  symptoms: string;
+}
+
 export default function AIConsultation() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      role: 'ai',
-      content: "Good day! I'm Dr. AI, your virtual medical consultant. I've reviewed your symptom analysis from our system. Before we proceed, I'd like to gather some additional information to provide you with the most accurate guidance.\n\nCould you please tell me:\n1. When did you first notice these symptoms?\n2. Have the symptoms been getting worse, staying the same, or improving?\n3. Are you currently taking any medications or have any known allergies?",
-      timestamp: new Date(),
-    },
-  ]);
+  const searchParams = useSearchParams();
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  const generateInitialMessage = (data: UserData | null): string => {
+    if (!data || !data.name) {
+      return "Hello! I'm Dr. AI, your virtual medical consultant. I'm here to help you understand your symptoms better. When did you first notice these symptoms?";
+    }
+
+    // Create a concise, conversational greeting
+    let greeting = `Hello ${data.name}! I'm Dr. AI. `;
+
+    // Mention their symptoms to show context
+    const symptomPreview = data.symptoms.length > 100
+      ? data.symptoms.substring(0, 100) + '...'
+      : data.symptoms;
+
+    greeting += `I see you're experiencing ${symptomPreview}\n\n`;
+
+    // Acknowledge any important medical history
+    if (data.medicalHistory && data.medicalHistory !== 'None') {
+      greeting += `I've noted your medical history of ${data.medicalHistory}. `;
+    }
+
+    if (data.medications && data.medications !== 'None') {
+      greeting += `I also see you're currently taking ${data.medications}. `;
+    }
+
+    greeting += `\n\nTo help you better, when did you first start experiencing these symptoms?`;
+
+    return greeting;
+  };
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationStage, setConversationStage] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [followUpTime, setFollowUpTime] = useState('');
+  const [followUpNotes, setFollowUpNotes] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Handle scheduling follow-up
+  const handleScheduleFollowUp = () => {
+    if (!followUpDate || !followUpTime) {
+      alert('Please select both date and time for your follow-up.');
+      return;
+    }
+
+    const followUp = {
+      date: followUpDate,
+      time: followUpTime,
+      notes: followUpNotes,
+      symptoms: userData?.symptoms || '',
+      scheduledAt: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    const existingFollowUps = JSON.parse(localStorage.getItem('followUpAppointments') || '[]');
+    existingFollowUps.push(followUp);
+    localStorage.setItem('followUpAppointments', JSON.stringify(existingFollowUps));
+
+    // Close modal and reset
+    setShowFollowUpModal(false);
+    setFollowUpDate('');
+    setFollowUpTime('');
+    setFollowUpNotes('');
+
+    alert(`Follow-up scheduled for ${new Date(followUpDate).toLocaleDateString()} at ${followUpTime}. You'll receive a reminder!`);
+  };
+
+  // Text-to-Speech function
+  const speakText = (text: string) => {
+    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Remove markdown formatting for better speech
+    const cleanText = text
+      .replace(/\*\*/g, '') // Remove bold markers
+      .replace(/\*/g, '') // Remove italic markers
+      .replace(/\n/g, '. ') // Replace newlines with pauses
+      .replace(/- /g, '') // Remove list markers
+      .replace(/\d+\. /g, ''); // Remove numbered list markers
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    // Try to use a more natural voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice =>
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Google UK English Female') ||
+      voice.name.includes('Microsoft Zira')
+    );
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Stop speech
+  const stopSpeech = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInputMessage(transcript);
+            setIsListening(false);
+          };
+
+          recognition.onerror = (event: any) => {
+            // Only log errors that aren't "aborted" or "no-speech"
+            if (event.error !== 'aborted' && event.error !== 'no-speech') {
+              console.error('Speech recognition error:', event.error);
+            }
+            setIsListening(false);
+          };
+
+          recognition.onend = () => {
+            setIsListening(false);
+          };
+
+          recognitionRef.current = recognition;
+        } catch (error) {
+          console.warn('Could not initialize speech recognition:', error);
+        }
+      }
+    }
+
+    // Load voices for speech synthesis
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+
+      // Also add voiceschanged event listener for better browser support
+      window.speechSynthesis.addEventListener('voiceschanged', () => {
+        window.speechSynthesis.getVoices();
+      });
+    }
+  }, []);
+
+  // Start/Stop listening
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsListening(false);
+      }
+    }
+  };
+
+  // Load user data from URL params and initialize messages
+  useEffect(() => {
+    const data: UserData = {
+      name: searchParams.get('name') || '',
+      age: searchParams.get('age') || '',
+      gender: searchParams.get('gender') || '',
+      height: searchParams.get('height') || '',
+      weight: searchParams.get('weight') || '',
+      medicalHistory: searchParams.get('medicalHistory') || '',
+      medications: searchParams.get('medications') || '',
+      allergyDetails: searchParams.get('allergyDetails') || '',
+      surgeryHistory: searchParams.get('surgeryHistory') || '',
+      lifestyle: searchParams.get('lifestyle') || '',
+      familyHistory: searchParams.get('familyHistory') || '',
+      symptoms: searchParams.get('symptoms') || '',
+    };
+
+    setUserData(data);
+
+    // Initialize with AI greeting
+    setMessages([{
+      id: 1,
+      role: 'ai',
+      content: generateInitialMessage(data),
+      timestamp: new Date(),
+    }]);
+  }, [searchParams]);
+
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -41,46 +265,64 @@ export default function AIConsultation() {
 
     // Symptom duration questions
     if (input.includes('day') || input.includes('week') || input.includes('month') || input.includes('yesterday') || input.includes('ago')) {
-      return "Thank you for that information. Understanding the timeline helps me assess the severity.\n\nBased on the duration you've mentioned, let me ask: Have you experienced any of the following:\n- Fever or chills?\n- Changes in appetite or weight?\n- Difficulty sleeping?\n- Any recent injuries or accidents?\n\nAlso, on a scale of 1-10, how would you rate your current discomfort level?";
+      return "Thank you, that timeline is helpful. Have you noticed if the symptoms are getting worse, staying the same, or improving?";
+    }
+
+    // Progression/severity followup
+    if (input.includes('worse') || input.includes('worsening') || input.includes('getting bad')) {
+      return "I see. That's important to know. Have you experienced any fever, difficulty breathing, or severe pain along with this?";
+    }
+
+    if (input.includes('same') || input.includes('stable') || input.includes('unchanged')) {
+      return "Okay, stable symptoms are good to note. On a scale of 1-10, how would you rate your current discomfort level?";
+    }
+
+    if (input.includes('better') || input.includes('improving')) {
+      return "That's encouraging to hear! Are you doing anything specific that seems to help?";
     }
 
     // Treatment options inquiry
     if (input.includes('treatment') || input.includes('cure') || input.includes('fix') || input.includes('heal')) {
-      return "I understand you're looking for treatment options. Based on your symptoms, here are the recommended approaches:\n\n**Immediate Steps:**\n1. Rest and adequate hydration (8-10 glasses of water daily)\n2. Over-the-counter pain relief if needed (acetaminophen or ibuprofen)\n3. Monitor your symptoms closely\n\n**When to Seek Immediate Care:**\n- If symptoms worsen significantly\n- Development of high fever (>101.5°F/38.6°C)\n- Severe pain or difficulty breathing\n- Any concerning new symptoms\n\nWould you like me to explain any specific treatment in more detail, or do you have questions about medication dosages?";
+      return "For immediate relief, I'd recommend rest and staying well-hydrated. Over-the-counter pain relief like acetaminophen or ibuprofen can help too. Are you currently taking any medications?";
     }
 
     // Severity/seriousness questions
     if (input.includes('serious') || input.includes('severe') || input.includes('dangerous') || input.includes('worry') || input.includes('concerned')) {
-      return "I understand your concern about the severity of your condition. Let me provide you with an honest assessment:\n\nBased on the symptoms you've described, this appears to be **[specify severity level based on context]**. However, several factors can influence this:\n\n**Positive indicators:**\n- You're able to communicate and describe your symptoms clearly\n- No mention of severe warning signs so far\n\n**Things to monitor:**\n- Any sudden changes in symptoms\n- Development of new symptoms\n- Your body's response to rest and basic care\n\n**My recommendation:** While this doesn't appear to be immediately life-threatening, I would advise monitoring closely. If you experience any of the warning signs I mentioned earlier, please seek in-person medical care promptly.\n\nDoes this help address your concerns? What specific aspect worries you most?";
+      return "I understand your concern. Based on what you've shared, you're able to communicate clearly which is a good sign. However, if you develop a high fever over 101.5°F, severe pain, or difficulty breathing, please seek immediate medical care. What specifically worries you the most?";
     }
 
     // Lifestyle changes
     if (input.includes('lifestyle') || input.includes('diet') || input.includes('exercise') || input.includes('prevent')) {
-      return "Excellent question! Lifestyle modifications can significantly impact your recovery and prevent recurrence. Here are my recommendations:\n\n**Diet Modifications:**\n- Increase intake of fruits and vegetables (aim for 5-7 servings daily)\n- Stay well-hydrated (water is best)\n- Reduce processed foods and excess sugar\n- Consider anti-inflammatory foods (berries, fatty fish, leafy greens)\n\n**Physical Activity:**\n- Light to moderate exercise as tolerated\n- Start with 15-20 minutes of walking daily\n- Avoid strenuous activity until symptoms improve\n- Listen to your body and rest when needed\n\n**Sleep & Stress:**\n- Aim for 7-9 hours of quality sleep\n- Practice stress-reduction techniques (deep breathing, meditation)\n- Maintain consistent sleep schedule\n\n**Other Recommendations:**\n- Avoid smoking and limit alcohol\n- Practice good hygiene\n- Keep follow-up appointments\n\nWould you like more specific guidance on any of these areas?";
+      return "Great question! For recovery, focus on staying hydrated, eating nutritious foods, and getting adequate rest. Gentle exercise like walking can help, but listen to your body. Would you like specific dietary recommendations?";
     }
 
     // Specialist referral questions
     if (input.includes('specialist') || input.includes('doctor') || input.includes('hospital') || input.includes('appointment')) {
-      return "That's a very prudent question. Let me help you determine if a specialist consultation is necessary:\n\n**I would recommend seeing a specialist if:**\n- Your symptoms persist beyond 7-10 days despite treatment\n- Symptoms are significantly impacting your daily activities\n- You have underlying health conditions that may complicate treatment\n- You're not responding to initial treatment approaches\n\n**Type of specialist to consider:**\nBased on your symptoms, you might benefit from consulting:\n- A General Practitioner (for initial evaluation)\n- [Specific specialist based on symptoms]\n\n**In the meantime:**\n- Continue monitoring your symptoms\n- Keep a symptom diary (timing, severity, triggers)\n- Note any questions you want to ask the doctor\n\nWould you like me to help you prepare questions for your specialist visit? Or would you like to explore other treatment options first?";
+      return "That's a wise consideration. If your symptoms persist beyond 7-10 days or significantly impact your daily life, I'd recommend seeing a doctor in person. They can provide a thorough examination. Would you like help finding a doctor near you?";
     }
 
     // Medication questions
     if (input.includes('medicine') || input.includes('medication') || input.includes('pill') || input.includes('drug') || input.includes('prescription')) {
-      return "Good question about medications. Let me provide you with guidance:\n\n**Over-the-Counter Options:**\n- **Pain/Fever:** Acetaminophen (Tylenol) 500mg every 6 hours, or Ibuprofen (Advil) 400mg every 6-8 hours\n- **Important:** Don't exceed maximum daily doses (Acetaminophen: 3000mg, Ibuprofen: 1200mg)\n\n**Precautions:**\n- Take with food to prevent stomach upset\n- Avoid if you have liver/kidney problems or certain allergies\n- Don't combine multiple pain relievers without medical guidance\n- Stay hydrated while taking medications\n\n**When prescription medication may be needed:**\n- If symptoms don't improve in 3-5 days\n- If symptoms worsen despite treatment\n- If you develop complications\n\n**Important Note:** This is general guidance. Always read medication labels and consult a pharmacist or doctor if you have specific health conditions or take other medications.\n\nAre you currently taking any other medications I should be aware of?";
+      return "For over-the-counter relief, acetaminophen (Tylenol) 500mg every 6 hours or ibuprofen (Advil) 400mg every 6-8 hours can help. Take with food and don't exceed the daily limits. Do you have any medication allergies I should know about?";
     }
 
     // Duration/timeline questions
     if (input.includes('long') || input.includes('how many') || input.includes('duration') || input.includes('time')) {
-      return "Understanding the expected timeline is important for managing your expectations and recovery:\n\n**Typical Recovery Timeline:**\n- **Initial improvement:** 2-3 days with proper rest and care\n- **Significant relief:** 5-7 days for most symptoms\n- **Full recovery:** 1-2 weeks depending on severity\n\n**Factors affecting recovery time:**\n- Overall health and immune system strength\n- Adherence to treatment recommendations\n- Adequate rest and nutrition\n- Underlying health conditions\n\n**Progress milestones to watch for:**\n- Day 2-3: Slight improvement in symptoms\n- Day 5: Noticeable reduction in severity\n- Day 7: Most symptoms should be manageable\n- Day 10-14: Near complete resolution\n\n**Red flags - See a doctor if:**\n- No improvement after 3 days\n- Symptoms worsen at any point\n- New concerning symptoms develop\n\nDoes this timeline align with what you're experiencing? How are you feeling today compared to when symptoms started?";
+      return "Typically, you should see some improvement in 2-3 days with proper rest. Most symptoms resolve within 1-2 weeks. If there's no improvement after 3 days or if things worsen, definitely see a doctor. How are you feeling compared to when it first started?";
     }
 
     // Pain-related questions
     if (input.includes('pain') || input.includes('hurt') || input.includes('ache') || input.includes('sore')) {
-      return "I understand you're experiencing pain, which can be quite distressing. Let me help you manage this:\n\n**Pain Assessment:**\nYou mentioned pain - could you describe it for me?\n- Is it sharp, dull, throbbing, or burning?\n- Does it radiate to other areas?\n- What makes it better or worse?\n- On a scale of 1-10, what's the intensity?\n\n**Immediate Pain Management:**\n1. **Rest** the affected area\n2. **Ice/Heat:** Ice for acute pain (first 48 hours), heat for chronic aches\n3. **Over-the-counter pain relief:** As mentioned earlier\n4. **Positioning:** Find comfortable positions that reduce pressure\n\n**When pain requires urgent attention:**\n- Sudden, severe pain (8-10/10)\n- Pain with fever, confusion, or difficulty breathing\n- Pain that prevents normal activities completely\n- Progressive worsening despite treatment\n\n**Non-medication approaches:**\n- Deep breathing exercises\n- Gentle stretching (if appropriate)\n- Distraction techniques\n- Proper sleep positioning\n\nCan you tell me more about your pain so I can provide more specific guidance?";
+      return "I'm sorry you're in pain. Can you describe it for me - is it sharp, dull, or throbbing? And on a scale of 1-10, how intense is it?";
+    }
+
+    // Fever
+    if (input.includes('fever') || input.includes('temperature') || input.includes('hot')) {
+      return "Have you taken your temperature? A fever over 101.5°F (38.6°C) would warrant immediate medical attention. Are you experiencing chills as well?";
     }
 
     // General/default response
-    return "Thank you for sharing that information. I'm here to help you understand your condition better and guide you toward appropriate care.\n\nBased on what you've told me so far, I'd like to gather a bit more detail:\n\n**Could you please describe:**\n- Your primary symptom that concerns you most?\n- Any factors that make it better or worse?\n- How it's affecting your daily activities?\n\n**Also helpful to know:**\n- Any relevant medical history (chronic conditions, past surgeries)?\n- Recent changes in your routine, diet, or stress levels?\n- Family history of similar conditions?\n\nThe more details you can provide, the better I can tailor my recommendations to your specific situation. What would you like to discuss first?";
+    return "Thank you for sharing that. To help you better, could you tell me more about your main symptom - what concerns you most about it?";
   };
 
   const handleSendMessage = async () => {
@@ -102,15 +344,21 @@ export default function AIConsultation() {
     const responseDelay = 1500 + Math.random() * 1500;
 
     setTimeout(() => {
+      const responseContent = generateDoctorResponse(currentInput, conversationStage);
       const aiResponse: Message = {
         id: messages.length + 2,
         role: 'ai',
-        content: generateDoctorResponse(currentInput, conversationStage),
+        content: responseContent,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiResponse]);
       setConversationStage(prev => prev + 1);
       setIsLoading(false);
+
+      // Speak the AI response if voice is enabled
+      if (voiceEnabled) {
+        speakText(responseContent);
+      }
     }, responseDelay);
   };
 
@@ -245,7 +493,27 @@ export default function AIConsultation() {
 
             {/* Input Area */}
             <div className="border-t border-purple-500/20 bg-gradient-to-r from-purple-600/10 to-pink-600/10 p-4">
-              <div className="flex items-end gap-3">
+              {/* Voice Controls Header */}
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                  <span className="text-xs font-medium text-purple-300">Voice Mode</span>
+                </div>
+                <button
+                  onClick={() => setVoiceEnabled(!voiceEnabled)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                    voiceEnabled
+                      ? 'bg-green-600/20 text-green-300 border border-green-500/30'
+                      : 'bg-slate-700/30 text-slate-400 border border-slate-600/30'
+                  }`}
+                >
+                  {voiceEnabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <textarea
                     value={inputMessage}
@@ -262,6 +530,46 @@ export default function AIConsultation() {
                   />
                 </div>
 
+                {/* Voice Input Button */}
+                <motion.button
+                  onClick={toggleListening}
+                  disabled={isLoading}
+                  className={`rounded-lg p-3 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isListening
+                      ? 'bg-gradient-to-r from-red-600 to-pink-600 shadow-red-500/30 animate-pulse'
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/30 hover:from-indigo-700 hover:to-purple-700'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title={isListening ? 'Stop listening' : 'Start voice input'}
+                >
+                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    {isListening ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    )}
+                  </svg>
+                </motion.button>
+
+                {/* Stop Speaking Button (shown when AI is speaking) */}
+                {isSpeaking && (
+                  <motion.button
+                    onClick={stopSpeech}
+                    className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 p-3 text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-700 hover:to-orange-700"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    title="Stop speaking"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                  </motion.button>
+                )}
+
                 {/* Send Button */}
                 <motion.button
                   onClick={handleSendMessage}
@@ -276,9 +584,26 @@ export default function AIConsultation() {
                 </motion.button>
               </div>
 
-              <p className="mt-2 text-xs text-indigo-400/60">
-                Press Enter to send • Shift+Enter for new line
-              </p>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-xs text-indigo-400/60">
+                  {isListening ? (
+                    <span className="flex items-center gap-1 text-red-400">
+                      <span className="inline-block h-2 w-2 rounded-full bg-red-400 animate-pulse"></span>
+                      Listening... Speak now
+                    </span>
+                  ) : (
+                    'Press Enter to send • Shift+Enter for new line'
+                  )}
+                </p>
+                {isSpeaking && (
+                  <p className="text-xs text-amber-400/80 flex items-center gap-1">
+                    <svg className="h-3 w-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                    </svg>
+                    AI Doctor is speaking...
+                  </p>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -363,12 +688,133 @@ export default function AIConsultation() {
                 ← Back to Results
               </button>
             </Link>
-            <button className="flex-1 rounded-lg border border-purple-500/30 bg-purple-950/30 px-6 py-3 text-purple-200 transition-all hover:border-purple-500/50 hover:bg-purple-950/50">
+            <button
+              onClick={() => setShowFollowUpModal(true)}
+              className="flex-1 rounded-lg border border-purple-500/30 bg-purple-950/30 px-6 py-3 text-purple-200 transition-all hover:border-purple-500/50 hover:bg-purple-950/50"
+            >
               Schedule Follow-up
             </button>
           </motion.div>
         </div>
       </main>
+
+      {/* Follow-up Schedule Modal */}
+      <AnimatePresence>
+        {showFollowUpModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowFollowUpModal(false)}
+          >
+            <motion.div
+              className="relative max-w-md w-full rounded-2xl border border-purple-500/30 bg-gradient-to-br from-slate-900 to-purple-950 p-6"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowFollowUpModal(false)}
+                className="absolute top-4 right-4 rounded-full bg-slate-800/50 p-2 text-purple-300 transition-colors hover:bg-slate-800 hover:text-white"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Modal Header */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600/30">
+                    <svg className="h-6 w-6 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Schedule Follow-up</h3>
+                    <p className="text-sm text-purple-300">Set a reminder for your next consultation</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form */}
+              <div className="space-y-4">
+                {/* Date Input */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-purple-300">
+                    Select Date
+                  </label>
+                  <input
+                    type="date"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full rounded-lg border border-purple-500/30 bg-slate-900/50 px-4 py-3 text-white focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  />
+                </div>
+
+                {/* Time Input */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-purple-300">
+                    Select Time
+                  </label>
+                  <input
+                    type="time"
+                    value={followUpTime}
+                    onChange={(e) => setFollowUpTime(e.target.value)}
+                    className="w-full rounded-lg border border-purple-500/30 bg-slate-900/50 px-4 py-3 text-white focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  />
+                </div>
+
+                {/* Notes Input */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-purple-300">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={followUpNotes}
+                    onChange={(e) => setFollowUpNotes(e.target.value)}
+                    placeholder="Add any notes about this follow-up..."
+                    rows={3}
+                    className="w-full resize-none rounded-lg border border-purple-500/30 bg-slate-900/50 px-4 py-3 text-white placeholder-indigo-400 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  />
+                </div>
+
+                {/* Info Box */}
+                <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/20 p-3">
+                  <div className="flex items-start gap-2">
+                    <svg className="h-5 w-5 flex-shrink-0 text-indigo-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs text-indigo-300">
+                      We'll save this reminder locally on your device. You can view all your scheduled follow-ups anytime.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowFollowUpModal(false)}
+                    className="flex-1 rounded-lg border border-slate-600/30 bg-slate-800/50 px-4 py-3 text-slate-300 transition-all hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleScheduleFollowUp}
+                    className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-white transition-all hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30"
+                  >
+                    Schedule
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

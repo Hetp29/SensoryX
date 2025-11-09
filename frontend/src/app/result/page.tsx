@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import jsPDF from 'jspdf';
 import TwinCard from '@/components/TwinCard';
 import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
@@ -237,6 +238,230 @@ function ResultPageContent() {
     }
   };
 
+  const handleSetReminders = async () => {
+    // Request notification permission
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+
+      if (permission === 'granted') {
+        // Create reminder options
+        const reminderOptions = [
+          { label: 'Follow-up in 1 week', days: 7 },
+          { label: 'Follow-up in 2 weeks', days: 14 },
+          { label: 'Follow-up in 1 month', days: 30 },
+        ];
+
+        // Show custom reminder dialog
+        const reminderDialog = document.createElement('div');
+        reminderDialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4';
+        reminderDialog.innerHTML = `
+          <div class="relative max-w-md w-full rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900 to-indigo-950 p-8">
+            <h3 class="text-2xl font-bold text-white mb-4">Set Medical Reminders</h3>
+            <p class="text-indigo-300 mb-6">Choose when you'd like to be reminded about your follow-up:</p>
+            <div class="space-y-3 mb-6">
+              ${reminderOptions.map((option, index) => `
+                <button
+                  class="reminder-option w-full rounded-lg border border-indigo-500/30 bg-indigo-950/30 px-4 py-3 text-left text-white transition-all hover:border-indigo-500/60 hover:bg-indigo-950/50"
+                  data-days="${option.days}"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="font-medium">${option.label}</span>
+                    <svg class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+            <button class="close-dialog w-full rounded-lg border border-indigo-500/30 bg-slate-900/50 px-4 py-3 text-indigo-300 transition-all hover:bg-slate-900/70">
+              Cancel
+            </button>
+          </div>
+        `;
+
+        document.body.appendChild(reminderDialog);
+
+        // Handle reminder selection
+        const reminderButtons = reminderDialog.querySelectorAll('.reminder-option');
+        reminderButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            const days = parseInt(button.getAttribute('data-days') || '7');
+            const reminderDate = new Date();
+            reminderDate.setDate(reminderDate.getDate() + days);
+
+            // Store reminder in localStorage
+            const reminders = JSON.parse(localStorage.getItem('sensoryxReminders') || '[]');
+            const newReminder = {
+              id: Date.now(),
+              patientName: userData.name,
+              date: reminderDate.toISOString(),
+              message: `Follow-up reminder for your SensoryX analysis. Check your symptoms and consider consulting with your healthcare provider.`,
+              created: new Date().toISOString(),
+            };
+            reminders.push(newReminder);
+            localStorage.setItem('sensoryxReminders', JSON.stringify(reminders));
+
+            // Show immediate confirmation notification
+            new Notification('Reminder Set! 🔔', {
+              body: `You'll be reminded on ${reminderDate.toLocaleDateString()} to follow up on your health analysis.`,
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+            });
+
+            // Schedule reminder check (in a real app, this would be handled by a service worker)
+            // For now, we'll just store it and check on page load
+            alert(`✅ Reminder set for ${reminderDate.toLocaleDateString()}!\n\nWe'll notify you to follow up on your symptoms and recommendations.`);
+
+            document.body.removeChild(reminderDialog);
+          });
+        });
+
+        // Handle close button
+        const closeButton = reminderDialog.querySelector('.close-dialog');
+        closeButton?.addEventListener('click', () => {
+          document.body.removeChild(reminderDialog);
+        });
+
+        // Handle click outside dialog
+        reminderDialog.addEventListener('click', (e) => {
+          if (e.target === reminderDialog) {
+            document.body.removeChild(reminderDialog);
+          }
+        });
+      } else {
+        alert('Please enable notifications in your browser settings to set reminders.');
+      }
+    } else {
+      alert('Your browser does not support notifications. Please try a modern browser like Chrome, Firefox, or Safari.');
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    let yPosition = margin;
+
+    // Helper function to add text with automatic page breaks
+    const addText = (text: string, fontSize: number = 10, isBold: boolean = false) => {
+      doc.setFontSize(fontSize);
+      if (isBold) {
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
+
+      const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
+      lines.forEach((line: string) => {
+        if (yPosition > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        doc.text(line, margin, yPosition);
+        yPosition += fontSize * 0.5;
+      });
+      yPosition += 5;
+    };
+
+    // Title
+    doc.setFillColor(79, 70, 229); // Indigo color
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SensoryX Analysis Report', margin, 25);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, margin, 35);
+
+    yPosition = 50;
+    doc.setTextColor(0, 0, 0);
+
+    // Patient Information
+    addText('PATIENT INFORMATION', 16, true);
+    addText(`Name: ${userData.name}`);
+    addText(`Age: ${userData.age} years`);
+    addText(`Gender: ${userData.gender}`);
+    addText(`Height: ${userData.height}`);
+    addText(`Weight: ${userData.weight}`);
+    addText(`Location: ${userData.location}`);
+    yPosition += 5;
+
+    // Medical History
+    addText('MEDICAL HISTORY', 16, true);
+    addText(`Pre-existing Conditions: ${userData.medicalHistory || 'None'}`);
+    addText(`Current Medications: ${userData.medications || 'None'}`);
+    addText(`Allergies: ${userData.allergyDetails || 'None'}`);
+    addText(`Surgery History: ${userData.surgeryHistory || 'None'}`);
+    addText(`Lifestyle Factors: ${userData.lifestyle || 'None'}`);
+    addText(`Family History: ${userData.familyHistory || 'None'}`);
+    yPosition += 5;
+
+    // Symptoms
+    addText('REPORTED SYMPTOMS', 16, true);
+    addText(userData.symptoms);
+    yPosition += 5;
+
+    // Symptom Twin Match
+    addText('SYMPTOM TWIN MATCH', 16, true);
+    addText(`Match Similarity: ${mockData.twin.similarity}%`, 12, true);
+    addText(`Demographics: ${mockData.twin.age}y, ${mockData.twin.gender}, ${mockData.twin.location}`);
+    addText(`Symptom Description: "${mockData.twin.symptomDescription}"`);
+    addText(`Diagnosis: ${mockData.twin.diagnosis}`);
+    addText(`Timeline: ${mockData.twin.timeline}`);
+    addText(`Treatment: ${mockData.twin.treatment}`);
+    addText(`Outcome: ${mockData.twin.outcome}`);
+    yPosition += 5;
+
+    // Possible Conditions
+    addText('POSSIBLE CONDITIONS (AI-ANALYZED)', 16, true);
+    mockData.conditions.forEach((condition, index) => {
+      addText(`${index + 1}. ${condition.name} - ${condition.probability}% probability`, 11, true);
+      addText(`   ${condition.description}`);
+    });
+    yPosition += 5;
+
+    // Recommendations
+    addText('RECOMMENDATIONS', 16, true);
+    mockData.recommendations.forEach((rec, index) => {
+      addText(`${index + 1}. ${rec.title.toUpperCase()} (${rec.type})`, 11, true);
+      addText(`   ${rec.description}`);
+    });
+    yPosition += 5;
+
+    // Financial Impact (if available)
+    if (spendingData) {
+      addText('FINANCIAL IMPACT ANALYSIS', 16, true);
+      addText(`Total Medical Spending (12 months): $${spendingData.total_spending_12_months.toFixed(2)}`);
+      addText(`Monthly Average: $${spendingData.monthly_average.toFixed(2)}`);
+      addText(`Number of Transactions: ${spendingData.transaction_count}`);
+      addText(`Spending Trend: ${spendingData.spending_trend}`);
+
+      if (riskData) {
+        addText(`Financial Risk Level: ${riskData.risk_level.toUpperCase()}`, 11, true);
+        addText(`${riskData.alert_message}`);
+        addText(`Affordable Monthly Payment: ${riskData.affordable_monthly_payment}`);
+      }
+    }
+
+    // Disclaimer
+    yPosition += 10;
+    doc.setFillColor(245, 158, 11); // Amber color
+    doc.rect(margin - 5, yPosition - 5, pageWidth - 2 * margin + 10, 35, 'F');
+    doc.setTextColor(120, 53, 15); // Dark amber text
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('IMPORTANT DISCLAIMER', margin, yPosition + 5);
+    doc.setFont('helvetica', 'normal');
+    const disclaimerText = 'This report is for informational purposes only and does not constitute medical advice. Always consult with a qualified healthcare professional for proper diagnosis and treatment. The symptom twin match and AI analysis are based on pattern recognition and should not replace professional medical evaluation.';
+    const disclaimerLines = doc.splitTextToSize(disclaimerText, pageWidth - 2 * margin - 10);
+    doc.text(disclaimerLines, margin, yPosition + 12);
+
+    // Save the PDF
+    doc.save(`SensoryX_Analysis_${userData.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
@@ -338,38 +563,38 @@ function ResultPageContent() {
             <div className="p-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {userData.name && (
-                  <div className="rounded-lg bg-slate-900/30 p-4">
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Name</p>
+                  <div className="rounded-lg border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-purple-950/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-300">Name</p>
                     <p className="text-lg font-semibold text-white">{userData.name}</p>
                   </div>
                 )}
                 {userData.age && (
-                  <div className="rounded-lg bg-slate-900/30 p-4">
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Age</p>
+                  <div className="rounded-lg border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-purple-950/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-300">Age</p>
                     <p className="text-lg font-semibold text-white">{userData.age}</p>
                   </div>
                 )}
                 {userData.gender && (
-                  <div className="rounded-lg bg-slate-900/30 p-4">
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Gender</p>
+                  <div className="rounded-lg border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-purple-950/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-300">Gender</p>
                     <p className="text-lg font-semibold text-white">{userData.gender}</p>
                   </div>
                 )}
                 {userData.height && (
-                  <div className="rounded-lg bg-slate-900/30 p-4">
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Height</p>
+                  <div className="rounded-lg border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-purple-950/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-300">Height</p>
                     <p className="text-lg font-semibold text-white">{userData.height}</p>
                   </div>
                 )}
                 {userData.weight && (
-                  <div className="rounded-lg bg-slate-900/30 p-4">
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Weight</p>
+                  <div className="rounded-lg border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-purple-950/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-300">Weight</p>
                     <p className="text-lg font-semibold text-white">{userData.weight}</p>
                   </div>
                 )}
                 {userData.location && (
-                  <div className="rounded-lg bg-slate-900/30 p-4">
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">Location</p>
+                  <div className="rounded-lg border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-purple-950/30 p-4">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-300">Location</p>
                     <p className="text-lg font-semibold text-white">{userData.location}</p>
                   </div>
                 )}
@@ -474,7 +699,7 @@ function ResultPageContent() {
               <TwinCard twin={mockData.twin} />
               {/* Nearby Doctors Map */}
               {userData.location && (
-                <NearbyDoctorsMap location={userData.location} />
+                <NearbyDoctorsMap location={userData.location} userData={userData} />
               )}
             </div>
 
@@ -702,21 +927,41 @@ function ResultPageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
           >
-            <button className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70">
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: 'My SensoryX Analysis Results',
+                    text: `Check out my symptom analysis results from SensoryX - ${mockData.twin.similarity}% match found!`,
+                    url: window.location.href,
+                  }).catch((error) => console.log('Error sharing:', error));
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                  alert('Link copied to clipboard!');
+                }
+              }}
+              className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70"
+            >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
               Share Results
             </button>
 
-            <button className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70">
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70"
+            >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
               Download PDF
             </button>
 
-            <button className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70">
+            <button
+              onClick={handleSetReminders}
+              className="flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-slate-900/50 px-6 py-4 text-indigo-200 transition-all hover:border-indigo-500/50 hover:bg-slate-900/70"
+            >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
