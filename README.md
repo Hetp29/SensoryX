@@ -67,7 +67,7 @@ Note: This is a lightweight demo to show hybrid session flow. Full iMessage inte
 
 ## 🔗 Links
 
-[Live Demo] | [Video Demo] | [Devpost] | [GitHub]
+[Devpost] | [GitHub]
 
 ---
 

@@ -135,35 +135,59 @@ function ResultPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [spendingData, setSpendingData] = useState<SpendingSummary | null>(null);
   const [riskData, setRiskData] = useState<RiskAssessment | null>(null);
+  const [analysisData, setAnalysisData] = useState<any>(null);
 
   // Mock user ID - replace with actual user authentication
   const userId = 'user123';
 
   useEffect(() => {
-    // Get all user data from URL params
-    setUserData({
-      name: searchParams.get('name') || '',
-      age: searchParams.get('age') || '',
-      gender: searchParams.get('gender') || '',
-      height: searchParams.get('height') || '',
-      weight: searchParams.get('weight') || '',
-      medicalHistory: searchParams.get('medicalHistory') || '',
-      medications: searchParams.get('medications') || '',
-      allergyDetails: searchParams.get('allergyDetails') || '',
-      surgeryHistory: searchParams.get('surgeryHistory') || '',
-      lifestyle: searchParams.get('lifestyle') || '',
-      familyHistory: searchParams.get('familyHistory') || '',
-      location: searchParams.get('location') || '',
-      symptoms: searchParams.get('symptoms') || '',
-    });
+    const fetchData = async () => {
+      const analysisId = searchParams.get('analysis_id');
 
-    // Fetch financial data
-    fetchFinancialData();
+      if (analysisId) {
+        // NEW: Fetch from backend using analysis_id
+        try {
+          const { getAnalysisById } = await import('@/lib/api');
+          const response = await getAnalysisById(analysisId);
 
-    // Simulate API loading
-    setTimeout(() => {
+          console.log('Analysis data from backend:', response);
+
+          // Set analysis data (twin, conditions, recommendations)
+          setAnalysisData(response);
+
+          // Extract patient data from analysis if available
+          // For now, we'll keep user data empty since backend should have it
+        } catch (error) {
+          console.error('Error fetching analysis:', error);
+          // Fall back to mockData if backend fails
+          setAnalysisData(null);
+        }
+      } else {
+        // FALLBACK: Get from URL params (backward compatibility)
+        setUserData({
+          name: searchParams.get('name') || '',
+          age: searchParams.get('age') || '',
+          gender: searchParams.get('gender') || '',
+          height: searchParams.get('height') || '',
+          weight: searchParams.get('weight') || '',
+          medicalHistory: searchParams.get('medicalHistory') || '',
+          medications: searchParams.get('medications') || '',
+          allergyDetails: searchParams.get('allergyDetails') || '',
+          surgeryHistory: searchParams.get('surgeryHistory') || '',
+          lifestyle: searchParams.get('lifestyle') || '',
+          familyHistory: searchParams.get('familyHistory') || '',
+          location: searchParams.get('location') || '',
+          symptoms: searchParams.get('symptoms') || '',
+        });
+      }
+
+      // Fetch financial data
+      await fetchFinancialData();
+
       setIsLoading(false);
-    }, 1500);
+    };
+
+    fetchData();
   }, [searchParams]);
 
   const fetchFinancialData = async () => {
@@ -696,7 +720,7 @@ function ResultPageContent() {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left Column - Symptom Twin */}
             <div className="lg:col-span-2 space-y-8">
-              <TwinCard twin={mockData.twin} />
+              <TwinCard twin={analysisData?.twin || mockData.twin} />
               {/* Nearby Doctors Map */}
               {userData.location && (
                 <NearbyDoctorsMap location={userData.location} userData={userData} />
@@ -705,8 +729,8 @@ function ResultPageContent() {
 
             {/* Right Column - Analysis & Recommendations */}
             <div className="space-y-8">
-              <SignatureCard conditions={mockData.conditions} />
-              <RecommendationCard recommendations={mockData.recommendations} />
+              <SignatureCard conditions={analysisData?.conditions || mockData.conditions} />
+              <RecommendationCard recommendations={analysisData?.recommendations || mockData.recommendations} />
             </div>
           </div>
 
