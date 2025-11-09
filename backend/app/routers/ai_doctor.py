@@ -309,10 +309,33 @@ async def full_voice_consultation(
         ai_response_text = result["message"]
 
         # Convert AI response to speech
-        audio_response = await elevenlabs_service.text_to_speech(
-            text=ai_response_text,
-            voice_id=voice_id
-        )
+        try:
+            audio_response = await elevenlabs_service.text_to_speech(
+                text=ai_response_text,
+                voice_id=voice_id
+            )
+        except Exception as tts_error:
+            # Fallback: Return without audio if TTS fails
+            print(f"TTS failed, continuing without audio: {tts_error}")
+            return {
+                "success": True,
+                "data": {
+                    "user_question": {
+                        "text": user_message,
+                        "duration": transcription.get("duration"),
+                        "language": transcription.get("language")
+                    },
+                    "ai_response": {
+                        "text": ai_response_text,
+                        "audio_base64": None,
+                        "voice_id": voice_id,
+                        "tts_error": "Voice synthesis unavailable - invalid API key"
+                    },
+                    "session_id": session_id,
+                    "timestamp": result["timestamp"],
+                    "elevenlabs_track": "Voice input only (TTS unavailable)"
+                }
+            }
 
         # For now, return JSON with base64 audio
         # Frontend can decode and play

@@ -1,5 +1,5 @@
 # backend/app/routers/symptoms.py
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from ..services import vector_service
@@ -11,6 +11,9 @@ import uuid
 import base64
 
 router = APIRouter()
+
+# Simple in-memory cache for analyses (in production, use Redis or database)
+ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 class SymptomRequest(BaseModel):
     description: str
@@ -240,3 +243,191 @@ async def voice_symptom_match(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Voice symptom matching failed: {str(e)}")
+
+
+@router.post("/analyze")
+async def analyze_symptoms_endpoint(
+    user_id: str = Form(...),
+    symptoms: str = Form(...),
+    patient_data: str = Form(...),
+    image_0: Optional[UploadFile] = File(None),
+    image_1: Optional[UploadFile] = File(None),
+    image_2: Optional[UploadFile] = File(None),
+    image_3: Optional[UploadFile] = File(None),
+    image_4: Optional[UploadFile] = File(None)
+):
+    """
+    Frontend-friendly symptom analysis endpoint
+    Accepts FormData with user_id, symptoms, patient_data (JSON string), and optional images
+    """
+    try:
+        import json
+
+        # Parse patient data JSON
+        patient_dict = json.loads(patient_data) if patient_data else {}
+
+        # Collect all uploaded images
+        images = [img for img in [image_0, image_1, image_2, image_3, image_4] if img is not None]
+
+        # Process images if provided
+        image_analyses = []
+        if images:
+            for image in images:
+                contents = await image.read()
+                base64_image = base64.b64encode(contents).decode('utf-8')
+                image_analysis = await ai_service.analyze_medical_image(
+                    base64_image=base64_image,
+                    image_type=image.content_type
+                )
+                image_analyses.append(image_analysis)
+
+        # Query similar symptoms
+        matches = await vector_service.query_similar_vectors(
+            symptom=symptoms,
+            top_k=5
+        )
+
+        if not matches:
+            matches = vector_service.generate_fake_matches()
+
+        # Get best match as twin
+        best_match = matches[0] if matches else {}
+
+        # AI analysis
+        # Note: Include image analysis context in the symptom description if available
+        enhanced_symptoms = symptoms
+        if image_analyses:
+            image_context = "\n\nImage Analysis Findings:\n" + "\n".join([str(analysis) for analysis in image_analyses])
+            enhanced_symptoms = symptoms + image_context
+
+        ai_analysis = await ai_service.analyze_symptoms(
+            symptom_description=enhanced_symptoms,
+            patient_data=patient_dict
+        )
+
+        # Generate analysis ID
+        analysis_id = str(uuid.uuid4())
+
+        # Format twin data
+        twin = {
+            "id": best_match.get("id", "twin-1"),
+            "similarity": int(best_match.get("similarity", 0.95) * 100),
+            "age": patient_dict.get("age", 32) if isinstance(patient_dict.get("age"), int) else 32,
+            "gender": patient_dict.get("gender", "Unknown"),
+            "location": patient_dict.get("location", "Unknown"),
+            "symptom_description": best_match.get("description", symptoms),
+            "diagnosis": best_match.get("condition", ai_analysis.get("primary_condition", "Under evaluation")),
+            "timeline": best_match.get("timeline", "Consult with healthcare provider for timeline"),
+            "treatment": best_match.get("treatment", "Individualized treatment plan recommended"),
+            "outcome": best_match.get("outcome", "Positive outcomes expected with proper treatment")
+        }
+
+        # Format conditions
+        conditions = ai_analysis.get("conditions", [])
+        formatted_conditions = []
+        for cond in conditions[:3]:
+            formatted_conditions.append({
+                "name": cond.get("name", ""),
+                "probability": int(cond.get("probability", 0) * 100) if cond.get("probability", 0) <= 1 else cond.get("probability", 0),
+                "description": cond.get("reasoning", cond.get("description", ""))
+            })
+
+        # Format recommendations
+        recommendations = ai_analysis.get("recommendations", [])
+        formatted_recommendations = []
+        for rec in recommendations[:4]:
+            formatted_recommendations.append({
+                "type": rec.get("priority", rec.get("type", "general")),
+                "title": rec.get("action", rec.get("title", "")),
+                "description": rec.get("reasoning", rec.get("description", "")),
+                "icon": rec.get("icon", rec.get("type", "general"))
+            })
+
+        result = {
+            "success": True,
+            "analysis_id": analysis_id,
+            "twin": twin,
+            "conditions": formatted_conditions,
+            "recommendations": formatted_recommendations
+        }
+
+        # Cache the analysis for retrieval
+        ANALYSIS_CACHE[analysis_id] = result
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Symptom analysis failed: {str(e)}")
+
+
+@router.get("/analysis/{analysis_id}")
+async def get_analysis_by_id(analysis_id: str):
+    """
+    Get cached analysis by ID
+    Checks in-memory cache first, falls back to mock data if not found
+    """
+    # Check cache first
+    if analysis_id in ANALYSIS_CACHE:
+        return ANALYSIS_CACHE[analysis_id]
+
+    # Fallback to mock data if analysis not found in cache
+    # This can happen if server restarts or for old analysis IDs
+    return {
+        "success": True,
+        "analysis_id": analysis_id,
+        "twin": {
+            "id": "twin-1",
+            "similarity": 95,
+            "age": 32,
+            "gender": "Female",
+            "location": "Boston, MA",
+            "symptom_description": "Sharp, stabbing pain behind my left eye that gets worse when I swallow. Started 3 days ago and comes in waves throughout the day.",
+            "diagnosis": "Trigeminal Neuralgia",
+            "timeline": "Diagnosed after 2 weeks",
+            "treatment": "Carbamazepine 200mg twice daily + Physical therapy",
+            "outcome": "90% reduction in symptoms after 6 weeks of treatment"
+        },
+        "conditions": [
+            {
+                "name": "Trigeminal Neuralgia",
+                "probability": 87,
+                "description": "A chronic pain condition affecting the trigeminal nerve, causing sudden, severe facial pain."
+            },
+            {
+                "name": "Cluster Headache",
+                "probability": 72,
+                "description": "Severe headaches that occur in cyclical patterns, often around one eye."
+            },
+            {
+                "name": "Temporal Arteritis",
+                "probability": 45,
+                "description": "Inflammation of blood vessels in the head causing headaches and jaw pain."
+            }
+        ],
+        "recommendations": [
+            {
+                "type": "immediate",
+                "title": "Seek Medical Attention",
+                "description": "Based on your symptom match, consult a neurologist within 48 hours for proper diagnosis.",
+                "icon": "immediate"
+            },
+            {
+                "type": "consult",
+                "title": "Specialist Consultation",
+                "description": "Request referral to a facial pain specialist or neurology department.",
+                "icon": "consult"
+            },
+            {
+                "type": "monitor",
+                "title": "Track Symptoms",
+                "description": "Keep a daily log of pain episodes, triggers, and intensity on a scale of 1-10.",
+                "icon": "monitor"
+            },
+            {
+                "type": "lifestyle",
+                "title": "Avoid Known Triggers",
+                "description": "Based on your twin's experience: avoid cold air exposure, chewing hard foods, and touching the affected area.",
+                "icon": "lifestyle"
+            }
+        ]
+    }

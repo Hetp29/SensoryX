@@ -10,6 +10,9 @@ import TwinCard from '@/components/TwinCard';
 import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
 import NearbyDoctorsMap from '@/components/NearbyDoctorsMap';
+import AIDoctorModal from '@/components/AIDoctorModal';
+import NotificationPanel from '@/components/NotificationPanel';
+import InsightsDashboard from '@/components/InsightsDashboard';
 
 // Financial data types
 interface CategoryData {
@@ -135,35 +138,62 @@ function ResultPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [spendingData, setSpendingData] = useState<SpendingSummary | null>(null);
   const [riskData, setRiskData] = useState<RiskAssessment | null>(null);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isAIDoctorModalOpen, setIsAIDoctorModalOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const [isInsightsDashboardOpen, setIsInsightsDashboardOpen] = useState(false);
 
   // Mock user ID - replace with actual user authentication
   const userId = 'user123';
 
   useEffect(() => {
-    // Get all user data from URL params
-    setUserData({
-      name: searchParams.get('name') || '',
-      age: searchParams.get('age') || '',
-      gender: searchParams.get('gender') || '',
-      height: searchParams.get('height') || '',
-      weight: searchParams.get('weight') || '',
-      medicalHistory: searchParams.get('medicalHistory') || '',
-      medications: searchParams.get('medications') || '',
-      allergyDetails: searchParams.get('allergyDetails') || '',
-      surgeryHistory: searchParams.get('surgeryHistory') || '',
-      lifestyle: searchParams.get('lifestyle') || '',
-      familyHistory: searchParams.get('familyHistory') || '',
-      location: searchParams.get('location') || '',
-      symptoms: searchParams.get('symptoms') || '',
-    });
+    const fetchData = async () => {
+      const analysisId = searchParams.get('analysis_id');
 
-    // Fetch financial data
-    fetchFinancialData();
+      if (analysisId) {
+        // NEW: Fetch from backend using analysis_id
+        try {
+          const { getAnalysisById } = await import('@/lib/api');
+          const response = await getAnalysisById(analysisId);
 
-    // Simulate API loading
-    setTimeout(() => {
+          console.log('Analysis data from backend:', response);
+
+          // Set analysis data (twin, conditions, recommendations)
+          setAnalysisData(response);
+
+          // Extract patient data from analysis if available
+          // For now, we'll keep user data empty since backend should have it
+        } catch (error) {
+          console.error('Error fetching analysis:', error);
+          // Fall back to mockData if backend fails
+          setAnalysisData(null);
+        }
+      } else {
+        // FALLBACK: Get from URL params (backward compatibility)
+        setUserData({
+          name: searchParams.get('name') || '',
+          age: searchParams.get('age') || '',
+          gender: searchParams.get('gender') || '',
+          height: searchParams.get('height') || '',
+          weight: searchParams.get('weight') || '',
+          medicalHistory: searchParams.get('medicalHistory') || '',
+          medications: searchParams.get('medications') || '',
+          allergyDetails: searchParams.get('allergyDetails') || '',
+          surgeryHistory: searchParams.get('surgeryHistory') || '',
+          lifestyle: searchParams.get('lifestyle') || '',
+          familyHistory: searchParams.get('familyHistory') || '',
+          location: searchParams.get('location') || '',
+          symptoms: searchParams.get('symptoms') || '',
+        });
+      }
+
+      // Fetch financial data
+      await fetchFinancialData();
+
       setIsLoading(false);
-    }, 1500);
+    };
+
+    fetchData();
   }, [searchParams]);
 
   const fetchFinancialData = async () => {
@@ -404,27 +434,30 @@ function ResultPageContent() {
     yPosition += 5;
 
     // Symptom Twin Match
+    const twin = analysisData?.twin || mockData.twin;
     addText('SYMPTOM TWIN MATCH', 16, true);
-    addText(`Match Similarity: ${mockData.twin.similarity}%`, 12, true);
-    addText(`Demographics: ${mockData.twin.age}y, ${mockData.twin.gender}, ${mockData.twin.location}`);
-    addText(`Symptom Description: "${mockData.twin.symptomDescription}"`);
-    addText(`Diagnosis: ${mockData.twin.diagnosis}`);
-    addText(`Timeline: ${mockData.twin.timeline}`);
-    addText(`Treatment: ${mockData.twin.treatment}`);
-    addText(`Outcome: ${mockData.twin.outcome}`);
+    addText(`Match Similarity: ${twin.similarity}%`, 12, true);
+    addText(`Demographics: ${twin.age}y, ${twin.gender}, ${twin.location}`);
+    addText(`Symptom Description: "${twin.symptom_description || twin.symptomDescription}"`);
+    addText(`Diagnosis: ${twin.diagnosis}`);
+    addText(`Timeline: ${twin.timeline}`);
+    addText(`Treatment: ${twin.treatment}`);
+    addText(`Outcome: ${twin.outcome}`);
     yPosition += 5;
 
     // Possible Conditions
+    const conditions = analysisData?.conditions || mockData.conditions;
     addText('POSSIBLE CONDITIONS (AI-ANALYZED)', 16, true);
-    mockData.conditions.forEach((condition, index) => {
+    conditions.forEach((condition, index) => {
       addText(`${index + 1}. ${condition.name} - ${condition.probability}% probability`, 11, true);
       addText(`   ${condition.description}`);
     });
     yPosition += 5;
 
     // Recommendations
+    const recommendations = analysisData?.recommendations || mockData.recommendations;
     addText('RECOMMENDATIONS', 16, true);
-    mockData.recommendations.forEach((rec, index) => {
+    recommendations.forEach((rec, index) => {
       addText(`${index + 1}. ${rec.title.toUpperCase()} (${rec.type})`, 11, true);
       addText(`   ${rec.description}`);
     });
@@ -504,6 +537,28 @@ function ResultPageContent() {
               >
                 New Analysis
               </Link>
+              <button
+                onClick={() => setIsInsightsDashboardOpen(true)}
+                className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30 hover:text-white flex items-center gap-2"
+                title="Real-Time Insights"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Insights
+              </button>
+              <button
+                onClick={() => setIsNotificationPanelOpen(true)}
+                className="relative rounded-lg bg-indigo-600/20 p-2.5 text-indigo-300 transition-colors hover:bg-indigo-600/30 hover:text-white"
+                title="Notifications"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  3
+                </span>
+              </button>
               <button className="rounded-lg bg-indigo-600/20 px-4 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-600/30">
                 Download Report
               </button>
@@ -696,7 +751,7 @@ function ResultPageContent() {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left Column - Symptom Twin */}
             <div className="lg:col-span-2 space-y-8">
-              <TwinCard twin={mockData.twin} />
+              <TwinCard twin={analysisData?.twin || mockData.twin} />
               {/* Nearby Doctors Map */}
               {userData.location && (
                 <NearbyDoctorsMap location={userData.location} userData={userData} />
@@ -705,10 +760,62 @@ function ResultPageContent() {
 
             {/* Right Column - Analysis & Recommendations */}
             <div className="space-y-8">
-              <SignatureCard conditions={mockData.conditions} />
-              <RecommendationCard recommendations={mockData.recommendations} />
+              <SignatureCard conditions={analysisData?.conditions || mockData.conditions} />
+              <RecommendationCard recommendations={analysisData?.recommendations || mockData.recommendations} />
+
+              {/* AI Doctor Consultation Button */}
+              <motion.button
+                onClick={() => setIsAIDoctorModalOpen(true)}
+                className="w-full rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-left transition-all hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                      <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Consult AI Doctor</h3>
+                      <p className="text-sm text-indigo-200">Get personalized medical guidance instantly</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-300 border border-green-500/30">
+                      FREE
+                    </span>
+                    <span className="text-xs text-indigo-200">24/7 Available</span>
+                  </div>
+                </div>
+              </motion.button>
             </div>
           </div>
+
+          {/* AI Doctor Modal */}
+          <AIDoctorModal
+            isOpen={isAIDoctorModalOpen}
+            onClose={() => setIsAIDoctorModalOpen(false)}
+            symptoms={userData.symptoms || analysisData?.twin?.symptom_description || ''}
+            patientData={userData}
+          />
+
+          {/* Notification Panel */}
+          <NotificationPanel
+            isOpen={isNotificationPanelOpen}
+            onClose={() => setIsNotificationPanelOpen(false)}
+            userId={userId}
+          />
+
+          {/* Insights Dashboard */}
+          <InsightsDashboard
+            isOpen={isInsightsDashboardOpen}
+            onClose={() => setIsInsightsDashboardOpen(false)}
+          />
 
           {/* Financial Impact Section */}
           {spendingData && riskData && (
@@ -738,7 +845,7 @@ function ResultPageContent() {
                     <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Estimated Treatment Costs - {mockData.twin.diagnosis}
+                    Estimated Treatment Costs - {(analysisData?.twin || mockData.twin).diagnosis}
                   </h3>
                 </div>
 
@@ -832,7 +939,7 @@ function ResultPageContent() {
                     <div>
                       <h4 className="mb-2 text-sm font-semibold text-indigo-400">Payment Plan Options:</h4>
                       <ul className="space-y-2">
-                        {riskData.recommendations.map((rec, idx) => (
+                        {riskData.recommendations?.map((rec, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm text-indigo-200">
                             <svg className="h-5 w-5 flex-shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -929,10 +1036,11 @@ function ResultPageContent() {
           >
             <button
               onClick={() => {
+                const twin = analysisData?.twin || mockData.twin;
                 if (navigator.share) {
                   navigator.share({
                     title: 'My SensoryX Analysis Results',
-                    text: `Check out my symptom analysis results from SensoryX - ${mockData.twin.similarity}% match found!`,
+                    text: `Check out my symptom analysis results from SensoryX - ${twin.similarity}% match found!`,
                     url: window.location.href,
                   }).catch((error) => console.log('Error sharing:', error));
                 } else {

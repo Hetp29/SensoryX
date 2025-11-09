@@ -416,19 +416,48 @@ export default function AnalyzePage() {
   };
 
   // Handle final submission
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     if (!userData.symptoms.trim()) return;
 
     setIsLoading(true);
 
-    // TODO: Send data to backend (including images)
-    console.log('User Data to be saved:', userData);
-    console.log('Uploaded Images:', uploadedImages);
+    try {
+      // Import API client
+      const { analyzeSymptoms } = await import('@/lib/api');
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Pass all user data as URL parameters
+      // Prepare patient data
+      const patientData = {
+        name: userData.name,
+        age: userData.age,
+        gender: userData.gender,
+        height: userData.height,
+        weight: userData.weight,
+        medical_history: userData.medicalHistory || 'None',
+        medications: userData.medications || 'None',
+        allergies: userData.allergyDetails || 'None',
+        surgery_history: userData.surgeryHistory || 'None',
+        lifestyle: userData.lifestyle || 'None',
+        family_history: userData.familyHistory || 'None',
+        location: userData.location,
+      };
+
+      console.log('Sending to backend:', { patientData, symptoms: userData.symptoms, images: uploadedImages.length });
+
+      // Send to backend
+      const response = await analyzeSymptoms({
+        user_id: 'user123', // TODO: Get from auth
+        symptoms: userData.symptoms,
+        patient_data: patientData,
+        images: uploadedImages.length > 0 ? uploadedImages : undefined,
+      });
+
+      console.log('Backend response:', response);
+
+      // Navigate to result with analysis_id
+      router.push(`/result?analysis_id=${response.analysis_id}`);
+    } catch (error) {
+      console.error('Error analyzing symptoms:', error);
+      // Fallback: pass via URL params if backend fails
       const params = new URLSearchParams({
         name: userData.name,
         age: userData.age,
@@ -445,7 +474,9 @@ export default function AnalyzePage() {
         symptoms: userData.symptoms,
       });
       router.push(`/result?${params.toString()}`);
-    }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const currentQuestion = chatQuestions[currentQuestionIndex];
@@ -549,7 +580,7 @@ export default function AnalyzePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  Let's Understand Your Symptoms
+                  Let&apos;s Understand Your Symptoms
                 </motion.h1>
 
                 <motion.p
@@ -558,7 +589,7 @@ export default function AnalyzePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  I'll ask you a few quick questions to better understand your condition and find your symptom twin.
+                  I&apos;ll ask you a few quick questions to better understand your condition and find your symptom twin.
                 </motion.p>
 
                 <motion.button
