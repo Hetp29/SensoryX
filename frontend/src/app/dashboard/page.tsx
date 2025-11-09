@@ -363,7 +363,7 @@ export default function FinancialDashboard() {
                     <div>
                       <h4 className="mb-2 text-sm font-semibold text-indigo-400">Recommendations:</h4>
                       <ul className="space-y-2">
-                        {riskData.recommendations.map((rec, idx) => (
+                        {(riskData.recommendations || []).map((rec, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm text-indigo-200">
                             <svg className="h-5 w-5 flex-shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

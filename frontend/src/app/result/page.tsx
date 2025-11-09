@@ -11,6 +11,7 @@ import SignatureCard from '@/components/SignatureCard';
 import RecommendationCard from '@/components/RecommendationCard';
 import NearbyDoctorsMap from '@/components/NearbyDoctorsMap';
 import AIDoctorModal from '@/components/AIDoctorModal';
+import AgentDashboard from '@/components/AgentDashboard';
 import NotificationPanel from '@/components/NotificationPanel';
 import InsightsDashboard from '@/components/InsightsDashboard';
 
@@ -140,6 +141,7 @@ function ResultPageContent() {
   const [riskData, setRiskData] = useState<RiskAssessment | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isAIDoctorModalOpen, setIsAIDoctorModalOpen] = useState(false);
+  const [isAgentDashboardOpen, setIsAgentDashboardOpen] = useState(false);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isInsightsDashboardOpen, setIsInsightsDashboardOpen] = useState(false);
 
@@ -793,6 +795,35 @@ function ResultPageContent() {
                   </div>
                 </div>
               </motion.button>
+
+              {/* Multi-Agent Analysis Button (Dedalus) */}
+              <motion.button
+                onClick={() => setIsAgentDashboardOpen(true)}
+                className="w-full rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-left transition-all hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                      <span className="text-2xl">🤖</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Multi-Agent Analysis</h3>
+                      <p className="text-sm text-purple-200">5 AI specialists analyze simultaneously</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-semibold text-yellow-300 border border-yellow-500/30">
+                      DEDALUS
+                    </span>
+                    <span className="text-xs text-purple-200">Instant Results</span>
+                  </div>
+                </div>
+              </motion.button>
             </div>
           </div>
 
@@ -802,6 +833,13 @@ function ResultPageContent() {
             onClose={() => setIsAIDoctorModalOpen(false)}
             symptoms={userData.symptoms || analysisData?.twin?.symptom_description || ''}
             patientData={userData}
+          />
+
+          {/* Multi-Agent Dashboard (Dedalus) */}
+          <AgentDashboard
+            isOpen={isAgentDashboardOpen}
+            onClose={() => setIsAgentDashboardOpen(false)}
+            symptoms={userData.symptoms || analysisData?.twin?.symptom_description || ''}
           />
 
           {/* Notification Panel */}
