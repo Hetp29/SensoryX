@@ -39,36 +39,3 @@ To demo the Photon hybrid integration locally:
 Note: This is a lightweight demo to show hybrid session flow. Full iMessage integration and rapid-ai-dev prototyping are out of scope for the hack but are the recommended next steps.
 
 ## 🏆 HackPrinceton Tracks
-
-### Main Track
-- **Healthcare** - Revolutionizing symptom-based diagnosis
-
-### Special Tracks
-1. **Amazon** - Best Practical AI Innovation
-2. **Capital One** - Best Financial Hack (medical bankruptcy prevention)
-3. **Y Combinator** - YC Challenge
-4. **Knot API** - Build on TransactionLink API
-5. **Telora** - Startup Track
-6. **Photon** - Exploring Hybrid Intelligence
-7. **Dedalus Labs** - Best Use of Dedalus
-8. **Chestnut Forty** - Best Predictive Intelligence
-9. **Gemini API** (MLH)
-10. **DigitalOcean Gradient AI** (MLH)
-11. **Snowflake API** (MLH)
-12. **ElevenLabs** (MLH)
-
-### Automatic Entry
-- **Best Overall Hack** - Competing for Amplitude internship
-
-## 👥 Team
-
-- Het Patel
-- Jay Vora 
-
-## 🔗 Links
-
-[Devpost] | [GitHub]
-
----
-
-*"We built an AI that feels what you feel and tells you who else felt it."*
